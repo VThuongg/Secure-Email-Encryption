@@ -1068,8 +1068,6 @@ th:last-child, td:last-child {
 .form-decode,
 .form-seen {
     background: #ffffff;
-    max-width: 800px;
-    margin: 40px auto;
     border-radius: 16px;
     border: 1px solid #cbd5e1;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);
