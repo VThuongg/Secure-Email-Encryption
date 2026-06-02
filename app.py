@@ -53,7 +53,18 @@ CORS(app)  # Cho phép tất cả các nguồn kết nối đến server Flask
 
 socketio = SocketIO(app, cors_allowed_origins="*")  # Cho phép tất cả các origin kết nối đến
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///email_encryption.db'
+# Đường dẫn lưu trữ mặc định
+DATABASE_PATH = 'email_encryption.db'
+PRIVATE_KEY_DIR = 'private_keys'
+ATTACHMENTS_DIR = 'attachments'
+
+# Nếu chạy trên Render (nơi chúng ta gắn ổ đĩa cố định vào thư mục /data)
+if os.path.exists('/data'):
+    DATABASE_PATH = '/data/email_encryption.db'
+    PRIVATE_KEY_DIR = '/data/private_keys'
+    ATTACHMENTS_DIR = '/data/attachments'
+
+app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{DATABASE_PATH}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=100)
 app.secret_key = os.urandom(24)
@@ -63,7 +74,7 @@ app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USERNAME'] = 'ikon1605@gmail.com'  # Email của bạn
-app.config['MAIL_PASSWORD'] = 'iyyo oxhg cnji epfm'  # Mật khẩu email của bạn
+app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', 'iyyo oxhg cnji epfm')  # Mật khẩu email của bạn
 
 mail = Mail(app)
 db.init_app(app)
@@ -236,16 +247,19 @@ def register():
         db.session.commit()
 
         # Đường dẫn tới file khóa riêng tư
-        private_key_dir = 'private_keys'
-        os.makedirs(private_key_dir, exist_ok=True)
-        private_key_filename = os.path.join(private_key_dir, f"private_key_{email}.pem")
+        os.makedirs(PRIVATE_KEY_DIR, exist_ok=True)
+        private_key_filename = os.path.join(PRIVATE_KEY_DIR, f"private_key_{email}.pem")
 
         # Lưu khóa riêng tư vào file
         with open(private_key_filename, 'w') as f:
             f.write(pem_private)
 
         # Gửi phản hồi JSON để client hiển thị modal thành công
-        response = jsonify(success=True, message="Đăng ký thành công!")
+        response = jsonify(
+            success=True,
+            message="Đăng ký thành công!",
+            private_key_file=private_key_filename
+        )
         response.headers['X-Private-Key-File'] = private_key_filename  # Thêm tên file vào header để client có thể tải file
 
         return response
@@ -595,8 +609,8 @@ def send_email():
                     "filename": encrypted_filename,
                     "content": encrypted_data.hex()
                 })
-                os.makedirs('attachments', exist_ok=True)
-                with open(os.path.join('attachments', encrypted_filename), 'wb') as f:
+                os.makedirs(ATTACHMENTS_DIR, exist_ok=True)
+                with open(os.path.join(ATTACHMENTS_DIR, encrypted_filename), 'wb') as f:
                     f.write(encrypted_data)
 
         # Tạo chữ ký để xác thực email
@@ -696,7 +710,7 @@ def decrypt_email(email_id):
             for attachment in attachments:
                 encrypted_data = bytes.fromhex(attachment['content'])
                 decrypted_attachment = aes_decrypt(encrypted_data, aes_decrypt_sender_bytes)
-                decrypted_attachment_path = os.path.join('attachments', 'decrypted_' + attachment['filename'])
+                decrypted_attachment_path = os.path.join(ATTACHMENTS_DIR, 'decrypted_' + attachment['filename'])
 
                 with open(decrypted_attachment_path, 'wb') as decrypted_file:
                     decrypted_file.write(decrypted_attachment)
@@ -746,7 +760,7 @@ def decrypt_email(email_id):
         for attachment in attachments:
             encrypted_data = bytes.fromhex(attachment['content'])
             decrypted_attachment = aes_decrypt(encrypted_data, decrypted_aes_key_bytes)
-            decrypted_attachment_path = os.path.join('attachments', 'decrypted_' + attachment['filename'])
+            decrypted_attachment_path = os.path.join(ATTACHMENTS_DIR, 'decrypted_' + attachment['filename'])
             with open(decrypted_attachment_path, 'wb') as decrypted_file:
                 decrypted_file.write(decrypted_attachment)
 
@@ -776,7 +790,7 @@ def download_attachment(email_id):
     if request.method == 'POST':
         private_key = request.form.get('private_key')
         if email.attachment and private_key:
-            attachment_path = os.path.join('attachments', email.attachment)
+            attachment_path = os.path.join(ATTACHMENTS_DIR, email.attachment)
 
             with open(attachment_path, 'rb') as file:
                 encrypted_data = file.read()
@@ -790,7 +804,11 @@ def download_attachment(email_id):
                 decrypted_body = aes_decrypt(encrypted_data, decrypted_aes_key_bytes)
 
                 # Đường dẫn lưu tệp giải mã
-                decrypted_file_path = os.path.join('downloads', 'decrypted_' + email.attachment)
+                DOWNLOADS_DIR = 'downloads'
+                if os.path.exists('/data'):
+                    DOWNLOADS_DIR = '/data/downloads'
+                os.makedirs(DOWNLOADS_DIR, exist_ok=True)
+                decrypted_file_path = os.path.join(DOWNLOADS_DIR, 'decrypted_' + email.attachment)
 
                 # Xóa tệp cũ nếu đã tồn tại
                 if os.path.exists(decrypted_file_path):
@@ -889,6 +907,21 @@ def handle_connect():
 @socketio.on('disconnect')
 def handle_disconnect():
     print("A user disconnected.")
+
+
+@app.route('/download_private_key')
+def download_private_key():
+    filename = request.args.get('filename')
+    if not filename:
+        return "Filename parameter is missing", 400
+    
+    # Secure filename and ensure it's inside the PRIVATE_KEY_DIR
+    base_name = os.path.basename(filename)
+    file_path = os.path.join(PRIVATE_KEY_DIR, base_name)
+    
+    if os.path.exists(file_path):
+        return send_file(file_path, as_attachment=True, download_name=base_name)
+    return "Không tìm thấy file khóa riêng tư.", 404
 
 
 if __name__ == '__main__':
