@@ -294,9 +294,11 @@ def login():
             session['username'] = user.username
             session['private_key'] = decrypt_with_password(password, user.private_key)
             session['public_key'] = user.public_key
-            return redirect(url_for('inbox'))
+            return jsonify(success=True, redirect_url=url_for('inbox'))
 
         return jsonify(success=False, message="Email hoặc mật khẩu không đúng.")
+
+    return redirect(url_for('index'))
 
 
 
@@ -305,7 +307,7 @@ def login():
 @app.route('/inbox', methods=['GET'])
 def inbox():
     if 'user_id' not in session:
-        return redirect(url_for('login'))
+        return redirect(url_for('index'))
     
     search_query = request.args.get('search', '')
     local_tz = pytz.timezone('Asia/Ho_Chi_Minh')

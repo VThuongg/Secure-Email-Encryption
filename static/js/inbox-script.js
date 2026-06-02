@@ -166,11 +166,13 @@ document.addEventListener("DOMContentLoaded", function() {
         if (formDecode) {
             formRepReceivedMail.classList.remove('active');
             formDecode.classList.remove('active');
+            formMailReceived.classList.add('active');
         }
     }
 
     function showFormDecode() {
         if (formDecode) {
+            formMailReceived.classList.remove('active');
             formDecode.classList.add('active');
         }
     }
@@ -297,11 +299,13 @@ document.addEventListener("DOMContentLoaded", function() {
         if (formSeenMail) {
             formRepSentMail.classList.remove('active');
             formSeenMail.classList.remove('active');
+            formMailSend.classList.add('active');
         }
     }
 
     function showFormSeen() {
         if (formSeenMail) {
+            formMailSend.classList.remove('active');
             formSeenMail.classList.add('active');
         }
     }
@@ -442,7 +446,35 @@ document.addEventListener("DOMContentLoaded", function() {
 
         setPositionAtBottom(formRepSentMail, formSeenMail);
     }
-});
+
+    // Nút quay lại ở đầu trang đọc thư
+    document.getElementById('btnBackDecode')?.addEventListener('click', hideFormDecode);
+    document.getElementById('btnBackSeen')?.addEventListener('click', hideFormSeen);
+
+    // Bắt sự kiện click vào hàng để mở nội dung thư
+    document.querySelectorAll('.email-table').forEach(table => {
+        table.addEventListener('click', function(event) {
+            // Không kích hoạt nếu click vào checkbox hoặc cột checkbox
+            if (event.target.type === 'checkbox' || event.target.closest('.col-checkbox') || event.target.closest('input[type="checkbox"]')) {
+                return;
+            }
+
+            const row = event.target.closest('.email-row');
+            if (row) {
+                const decodeBtn = row.querySelector('.btn-show-decode');
+                if (decodeBtn) {
+                    decodeBtn.click();
+                    return;
+                }
+                const detailsBtn = row.querySelector('.btn-show-details');
+                if (detailsBtn) {
+                    detailsBtn.click();
+                    return;
+                }
+            }
+        });
+    });
+  });
 
 ///_____________________Ẩn hiện nút Delete_____________________///
 // ---- Nút Delete của form thư đến ---- //

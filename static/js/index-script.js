@@ -152,15 +152,11 @@ document.querySelector('.login').addEventListener('submit', function(event) {
         method: this.method,
         body: formData,
     })
-    .then(response => {
-        if (response.redirected) {
-            window.location.href = response.url;  
-        } else {
-            return response.json(); 
-        }
-    })
+    .then(response => response.json())
     .then(data => {
-        if (data && !data.success) {
+        if (data.success) {
+            window.location.href = data.redirect_url;  
+        } else {
             showErrorModalLogin(data.message);  
         }
     })

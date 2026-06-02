@@ -585,6 +585,7 @@ th:last-child, td:last-child {
 
 .email-row {
     transition: all 0.2s ease;
+    cursor: pointer;
 }
 
 .email-row:hover {
@@ -595,17 +596,56 @@ th:last-child, td:last-child {
 
 .email-row.unread {
     background-color: #eff6ff; /* Soft blue highlight for unread */
-    font-weight: 600;
 }
 
 .email-row.unread td {
     color: #1e3a8a;
+    font-weight: bold !important;
 }
 
 .email-row.read {
     background-color: #ffffff;
     font-weight: 400;
     color: #475569;
+}
+
+/* Detail header & back button in email details view */
+.detail-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 16px;
+}
+
+.detail-header h1 {
+    font-size: 24px;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0;
+}
+
+.btn-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #475569;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-back:hover {
+    color: #0f172a;
+    background: #f1f5f9;
+    border-color: #94a3b8;
+    transform: translateX(-2px);
 }
 
 .decode,

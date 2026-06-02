@@ -156,7 +156,6 @@
                             <th>Chủ đề</th>
                             <th>Thời gian</th>
                             <th>Nội dung</th>
-                            <th class="col-action">Hành động</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -175,11 +174,7 @@
                                 {% else %}
                                     {{ email.decrypted_body | truncate(50) | e }}
                                 {% endif %}
-                            </td>
-                            <td class="decode">
-                                <a href="{{ url_for('decrypt_email', email_id=email.id) }}" class="btn-show-decode">
-                                    <i class="bx bx-envelope-open"></i>
-                                </a>
+                                <a href="{{ url_for('decrypt_email', email_id=email.id) }}" class="btn-show-decode" style="display: none;"></a>
                             </td>
                         </tr>
                         {% endfor %}
@@ -204,21 +199,17 @@
                             <th>Người nhận</th>
                             <th>Chủ đề</th>
                             <th>Thời gian</th>
-                            <th class="col-action">Hành động</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for email in sent_emails %}
                         {% if not email.is_deleted %}
-                        <tr id="email-{{ email.id }}">
+                        <tr class="email-row" id="email-{{ email.id }}">
                             <td><input type="checkbox" class="email-checkbox-send" data-email-id="{{ email.id }}"></td>
                             <td>{{ email.receiver_email }}</td>
                             <td>{{ email.subject }}</td>
-                            <td>{{ email.local_time }}</td>
-                            <td class="see">
-                                <a href="{{ url_for('decrypt_email', email_id=email.id) }}" class="btn-show-details">
-                                    <i class="bx bx-envelope-open"></i>
-                                </a>
+                            <td>{{ email.local_time }}
+                                <a href="{{ url_for('decrypt_email', email_id=email.id) }}" class="btn-show-details" style="display: none;"></a>
                             </td>
                         </tr>
                         {% endif %}
@@ -303,7 +294,10 @@
 
             <!--Đọc mail đến-->
             <div id="formDecode" class="form-decode">
-                <h1>Nội dung Email</h1>
+                <div class="detail-header">
+                    <button type="button" class="btn-back" id="btnBackDecode"><i class='bx bx-arrow-back'></i> Quay lại</button>
+                    <h1>Nội dung Email</h1>
+                </div>
                 <p>Người gửi: <span id="senderEmail"></span></p>
                 <p>Tiêu đề: <span id="subjectEmail"></span></p>
                 <p>Thời gian: <span id="timeEmailReceived"></span></p>
@@ -373,7 +367,10 @@
 
             <!--Đọc thư đã gửi-->
             <div id="formSeen" class="form-seen">
-                <h1>Nội dung Email đã gửi</h1>
+                <div class="detail-header">
+                    <button type="button" class="btn-back" id="btnBackSeen"><i class='bx bx-arrow-back'></i> Quay lại</button>
+                    <h1>Nội dung Email đã gửi</h1>
+                </div>
                 <p>Thông tin: <span id="messEmail"></span></p>
                 <p>Người gửi: <span id="sendEmail"></span></p>
                 <p>Người nhận: <span id="receiverEmail"></span></p>
