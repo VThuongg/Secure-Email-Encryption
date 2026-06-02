@@ -150,3 +150,9 @@ downloads/*
 *.db
 *.sqlite
 *.pem
+
+# Specific files to ignore
+Hương dẫn deploy.md
+Hướng dẫn deploy.md
+H*deploy.md
+

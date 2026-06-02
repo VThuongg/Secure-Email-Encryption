@@ -1,0 +1,25 @@
+Vui lòng chụp các ảnh giao diện sau đây và lưu vào thư mục này (docs/images/) với tên tương ứng để hiển thị trong README.md:
+
+1. login_page.png
+   - Nội dung: Ảnh chụp màn hình trang Đăng nhập (Login).
+   - Mô tả: Màn hình đăng nhập sạch sẽ, hiện đại.
+
+2. register_page.png
+   - Nội dung: Ảnh chụp màn hình trang Đăng ký (Register).
+   - Mô tả: Hiển thị form đăng ký và thông báo hoặc tải xuống tệp private_key.pem.
+
+3. inbox_page.png
+   - Nội dung: Ảnh chụp màn hình Hộp thư chính (Inbox).
+   - Mô tả: Giao diện chính của hòm thư hiển thị danh sách các email.
+
+4. compose_modal.png
+   - Nội dung: Ảnh chụp màn hình Soạn thư (Compose).
+   - Mô tả: Cửa sổ soạn thư hiện ra khi bấm gửi thư mới, có đính kèm file và tùy chọn ký số.
+
+5. email_detail_valid.png
+   - Nội dung: Ảnh chụp chi tiết thư giải mã thành công (Kèm Nhãn xanh bảo mật).
+   - Mô tả: Giao diện khi mở xem thư, hiển thị nhãn chữ ký hợp lệ "Chữ ký hợp lệ".
+
+6. email_detail_invalid.png (Tùy chọn)
+   - Nội dung: Ảnh chụp thư bị lỗi/giả mạo (Kèm Cảnh báo đỏ).
+   - Mô tả: Hiển thị nhãn cảnh báo chữ ký giả mạo "Chữ ký giả mạo/không khớp".
