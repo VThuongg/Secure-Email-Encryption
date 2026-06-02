@@ -8,3 +8,4 @@ beautifulsoup4==4.12.3
 pytz==2024.1
 eventlet==0.35.2
 gunicorn==21.2.0
+cryptography==42.0.5
