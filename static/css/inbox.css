@@ -617,6 +617,11 @@ th:last-child, td:last-child {
     margin-bottom: 24px;
     border-bottom: 1px solid #e2e8f0;
     padding-bottom: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: #ffffff;
+    padding-top: 40px;
 }
 
 .detail-header h1 {
@@ -735,7 +740,7 @@ th:last-child, td:last-child {
 .form-seen {
     z-index: 96;
     overflow-y: auto;
-    padding: 40px;
+    padding: 0 40px 40px 40px;
 }
 
 .form-mail-received.active,
