@@ -51,7 +51,11 @@ app = Flask(__name__)
 
 CORS(app)  # Cho phép tất cả các nguồn kết nối đến server Flask
 
-socketio = SocketIO(app, cors_allowed_origins="*")  # Cho phép tất cả các origin kết nối đến
+# Trên Windows, bắt buộc dùng async_mode='threading' để tránh xung đột eventlet làm treo/lặp reloader
+if os.name == 'nt':
+    socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
+else:
+    socketio = SocketIO(app, cors_allowed_origins="*")
 
 # Đường dẫn lưu trữ mặc định
 DATABASE_PATH = 'email_encryption.db'
