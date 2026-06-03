@@ -73,7 +73,11 @@ if os.path.exists('/data'):
     PRIVATE_KEY_DIR = '/data/private_keys'
     ATTACHMENTS_DIR = '/data/attachments'
 
-app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{DATABASE_PATH}'
+# Lấy DATABASE_URL từ Render (nếu có), nếu không dùng SQLite mặc định
+db_uri = os.environ.get('DATABASE_URL', f'sqlite:///{DATABASE_PATH}')
+if db_uri.startswith("postgres://"):
+    db_uri = db_uri.replace("postgres://", "postgresql://", 1)
+app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=100)
 app.secret_key = os.urandom(24)
