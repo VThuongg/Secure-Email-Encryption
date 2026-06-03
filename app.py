@@ -377,8 +377,9 @@ def inbox():
     # Lấy danh sách email trong thùng rác
 
     trash_emails = EncryptedEmail.query.filter(
-        ((EncryptedEmail.receiver_id == session['user_id']) & (EncryptedEmail.receiver_deleted == True)) |
-        ((EncryptedEmail.sender_id == session['user_id']) & (EncryptedEmail.sender_deleted == True))
+        (((EncryptedEmail.receiver_id == session['user_id']) & (EncryptedEmail.receiver_deleted == True)) |
+         ((EncryptedEmail.sender_id == session['user_id']) & (EncryptedEmail.sender_deleted == True))) &
+        (EncryptedEmail.is_deleted == False)
     ).order_by(EncryptedEmail.timestamp.desc()).all()
 
     for email in trash_emails:
@@ -466,8 +467,9 @@ def get_trash_emails():
     
     user_id = session['user_id']
     trash_emails = EncryptedEmail.query.filter(
-        ((EncryptedEmail.receiver_id == user_id) & (EncryptedEmail.receiver_deleted == True)) |
-        ((EncryptedEmail.sender_id == user_id) & (EncryptedEmail.sender_deleted == True))
+        (((EncryptedEmail.receiver_id == user_id) & (EncryptedEmail.receiver_deleted == True)) |
+         ((EncryptedEmail.sender_id == user_id) & (EncryptedEmail.sender_deleted == True))) &
+        (EncryptedEmail.is_deleted == False)
     ).order_by(EncryptedEmail.timestamp.desc()).all()
     
     emails_data = []
@@ -508,7 +510,7 @@ def delete_emails():
         # Kiểm tra xem người dùng có quyền xóa email này không
         if (email.receiver_id == session['user_id'] and email.receiver_deleted) or \
            (email.sender_id == session['user_id'] and email.sender_deleted):
-            db.session.delete(email)
+            email.is_deleted = True
         else:
             return jsonify({"success": False, "message": "Không có quyền xóa email này"})
 
@@ -522,24 +524,51 @@ def delete_all_trash():
         return jsonify({"success": False, "message": "Không được xác thực!!!"})
 
     try:
-        # Lấy tất cả thư trong thùng rác của người dùng
+        # Lấy tất cả thư trong thùng rác của người dùng (chưa bị xóa vĩnh viễn)
         emails_in_trash = EncryptedEmail.query.filter(
-            ((EncryptedEmail.receiver_id == session['user_id']) & (EncryptedEmail.receiver_deleted == True)) |
-            ((EncryptedEmail.sender_id == session['user_id']) & (EncryptedEmail.sender_deleted == True))
+            (((EncryptedEmail.receiver_id == session['user_id']) & (EncryptedEmail.receiver_deleted == True)) |
+             ((EncryptedEmail.sender_id == session['user_id']) & (EncryptedEmail.sender_deleted == True))) &
+            (EncryptedEmail.is_deleted == False)
         ).all()
 
-        # Xóa tất cả thư trong thùng rác
+        email_ids = [email.id for email in emails_in_trash]
+
+        # Đánh dấu xóa tất cả thư trong thùng rác
         for email in emails_in_trash:
-            db.session.delete(email)
+            email.is_deleted = True
 
         db.session.commit()
 
-        return jsonify({"success": True, "message": "Tất cả thư trong thùng rác đã được xóa thành công."})
+        return jsonify({"success": True, "message": "Tất cả thư trong thùng rác đã được xóa thành công.", "email_ids": email_ids})
     
     except Exception as e:
         db.session.rollback()
-        
         return jsonify({"success": False, "message": f"Lỗi khi xóa thư: {str(e)}"})
+
+@app.route('/restore_deleted_emails', methods=['POST'])
+def restore_deleted_emails():
+    if 'user_id' not in session:
+        return jsonify({"success": False, "message": "Không được xác thực!!!"})
+
+    data = request.get_json()
+    email_ids = data.get('email_ids', [])
+    user_id = session['user_id']
+
+    if not email_ids:
+        return jsonify({"success": False, "message": "Chưa chọn ít nhất một email!"})
+
+    try:
+        emails = EncryptedEmail.query.filter(EncryptedEmail.id.in_(email_ids)).all()
+        for email in emails:
+            if (email.receiver_id == user_id and email.receiver_deleted) or \
+               (email.sender_id == user_id and email.sender_deleted):
+                email.is_deleted = False
+
+        db.session.commit()
+        return jsonify({"success": True, "message": "Đã khôi phục email thành công."})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": False, "message": f"Lỗi: {str(e)}"})
 
 
 @app.route('/send', methods=['GET', 'POST'])

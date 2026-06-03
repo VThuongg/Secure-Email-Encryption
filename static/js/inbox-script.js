@@ -986,15 +986,43 @@ document.getElementById('delete-icon-3').addEventListener('click', function() {
             })
             .then(response => response.json())
             .then(data => {
-                console.log('Emails deleted:', data);
-                showToast('Đã xóa vĩnh viễn các email đã chọn.');
-                setTimeout(() => {
-                    location.reload();
-                }, 1500);
+                if (data.success) {
+                    showToast('Đã xóa vĩnh viễn các email đã chọn.', true, function() {
+                        // Undo restore deleted emails
+                        fetch('/restore_deleted_emails', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ email_ids: emailIds })
+                        })
+                        .then(res => res.json())
+                        .then(undoData => {
+                            if (undoData.success) {
+                                showToast('Đã hoàn tác, đang khôi phục email...', false);
+                                setTimeout(() => {
+                                    location.reload();
+                                }, 1500);
+                            } else {
+                                showToast(undoData.message);
+                                setTimeout(() => location.reload(), 2000);
+                            }
+                        })
+                        .catch(err => {
+                            console.error('Lỗi khi hoàn tác:', err);
+                            showToast('Có lỗi xảy ra khi khôi phục email.');
+                            setTimeout(() => location.reload(), 2000);
+                        });
+                    });
+                } else {
+                    showToast(data.message);
+                    setTimeout(() => location.reload(), 2000);
+                }
             })
             .catch(error => {
                 console.error('Error deleting emails:', error);
                 showToast('Có lỗi xảy ra khi xóa thư.');
+                setTimeout(() => location.reload(), 2000);
             });
         });
     }
@@ -1031,17 +1059,49 @@ document.getElementById('delete-now').addEventListener('click', function(e) {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    showToast('Tất cả thư trong thùng rác đã được xóa thành công!');
-                    setTimeout(() => {
-                        location.reload();
-                    }, 1500);
+                    // Ẩn tất cả hàng trong bảng thùng rác ngay lập tức
+                    document.querySelectorAll('.form-trash-mail tbody tr').forEach(row => {
+                        row.style.display = 'none';
+                    });
+
+                    const emailIds = data.email_ids || [];
+
+                    showToast('Đã dọn sạch thùng rác.', true, function() {
+                        // Undo restore empty trash
+                        fetch('/restore_deleted_emails', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ email_ids: emailIds })
+                        })
+                        .then(res => res.json())
+                        .then(undoData => {
+                            if (undoData.success) {
+                                showToast('Đã hoàn tác, đang khôi phục email...', false);
+                                setTimeout(() => {
+                                    location.reload();
+                                }, 1500);
+                            } else {
+                                showToast(undoData.message);
+                                setTimeout(() => location.reload(), 2000);
+                            }
+                        })
+                        .catch(err => {
+                            console.error('Lỗi khi hoàn tác:', err);
+                            showToast('Có lỗi xảy ra khi khôi phục email.');
+                            setTimeout(() => location.reload(), 2000);
+                        });
+                    });
                 } else {
                     showToast('Có lỗi xảy ra khi xóa tất cả thư. Vui lòng thử lại.');
+                    setTimeout(() => location.reload(), 2000);
                 }
             })
             .catch(error => {
                 console.error('Error deleting all emails:', error);
                 showToast('Có lỗi xảy ra khi xóa tất cả thư. Vui lòng thử lại.');
+                setTimeout(() => location.reload(), 2000);
             });
         });
     }
