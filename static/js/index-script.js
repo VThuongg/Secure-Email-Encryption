@@ -155,6 +155,7 @@ document.querySelector('.login').addEventListener('submit', function(event) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
+            sessionStorage.setItem('activeTab', 'mail-received');
             window.location.href = data.redirect_url;  
         } else {
             showErrorModalLogin(data.message);  
