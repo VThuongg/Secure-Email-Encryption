@@ -1795,6 +1795,7 @@ th:last-child, td:last-child {
 /* Custom styling for minimized compose form */
 .form-create-mail.minimized {
     height: 52px !important;
+    overflow: hidden !important;
 }
 
 .form-create-mail.minimized .head-create-mail {
