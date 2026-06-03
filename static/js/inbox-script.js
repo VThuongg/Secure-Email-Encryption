@@ -1032,8 +1032,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const rowsPerPage = 13;
 
     function paginateTable(table) {
-        const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+        const tbody = table.getElementsByTagName('tbody')[0];
+        if (!tbody) return;
+        const rows = tbody.getElementsByTagName('tr');
         const paginationControls = table.nextElementSibling;
+        if (!paginationControls || !paginationControls.classList.contains('pagination-controls')) {
+            return;
+        }
         let currentPage = 1;
 
         function displayRows() {

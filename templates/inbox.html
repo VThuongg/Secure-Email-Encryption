@@ -193,7 +193,6 @@
                             <th>Người gửi</th>
                             <th>Chủ đề</th>
                             <th>Thời gian</th>
-                            <th>Nội dung</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -205,16 +204,8 @@
                             </td>
                             <td>{{ email.sender_email }}</td>
                             <td>{{ email.subject }}</td>
-                            <td>{{ email.local_time.strftime('%Y-%m-%d %H:%M:%S') }}</td>
-                            <!-- Nội dung đã giải mã, giới hạn số từ -->
                             <td>
-                                {% if '----Forwarded message----' in email.decrypted_body %}
-                                    {{ email.decrypted_body.split('----Forwarded message----')[0] | truncate(50) | e }}
-                                {% elif "Vào lúc:" in email.decrypted_body %}
-                                    {{ email.decrypted_body.split('Vào lúc')[0] | truncate(50) | e }}
-                                {% else %}
-                                    {{ email.decrypted_body | truncate(50) | e }}
-                                {% endif %}
+                                {{ email.local_time.strftime('%Y-%m-%d %H:%M:%S') }}
                                 <a href="{{ url_for('decrypt_email', email_id=email.id) }}" class="btn-show-decode" style="display: none;"></a>
                             </td>
                         </tr>
@@ -313,7 +304,6 @@
                             <th>Người gửi/Người nhận</th>
                             <th>Chủ đề</th>
                             <th>Thời gian</th>
-                            <th>Nội dung</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -327,15 +317,8 @@
                             </td>
                             <td>{{ email.sender_email }} <span class="tag tag-received" style="background:#dbeafe; color:#1e40af; font-size:11px; padding:2px 6px; border-radius:4px; margin-left:6px;">Đến</span></td>
                             <td>{{ email.subject }}</td>
-                            <td>{{ email.local_time.strftime('%Y-%m-%d %H:%M:%S') }}</td>
                             <td>
-                                {% if '----Forwarded message----' in email.decrypted_body %}
-                                    {{ email.decrypted_body.split('----Forwarded message----')[0] | truncate(50) | e }}
-                                {% elif "Vào lúc:" in email.decrypted_body %}
-                                    {{ email.decrypted_body.split('Vào lúc')[0] | truncate(50) | e }}
-                                {% else %}
-                                    {{ email.decrypted_body | truncate(50) | e }}
-                                {% endif %}
+                                {{ email.local_time.strftime('%Y-%m-%d %H:%M:%S') }}
                                 <a href="{{ url_for('decrypt_email', email_id=email.id) }}" class="btn-show-decode" style="display: none;"></a>
                             </td>
                         </tr>
@@ -355,7 +338,6 @@
                             <td>{{ email.local_time }}
                                 <a href="{{ url_for('decrypt_email', email_id=email.id) }}" class="btn-show-details" style="display: none;"></a>
                             </td>
-                            <td>(Thư đã gửi)</td>
                         </tr>
                         {% endif %}
                         {% endfor %}
