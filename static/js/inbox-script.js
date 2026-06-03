@@ -528,18 +528,42 @@ document.addEventListener("DOMContentLoaded", function() {
                             recallBtn.style.display = 'inline-flex';
                             recallBtn.onclick = function(e) {
                                 e.preventDefault();
-                                if (confirm('Bạn có chắc chắn muốn thu hồi email này không?')) {
-                                    fetch(`/recall_email/${data.id}`, { method: 'POST' })
-                                        .then(res => res.json())
-                                        .then(resData => {
-                                            if (resData.success) {
-                                                alert(resData.message);
-                                                location.reload();
-                                            } else {
-                                                alert(resData.message);
-                                            }
-                                        })
-                                        .catch(err => console.error('Lỗi khi thu hồi thư:', err));
+                                const recallModal = document.getElementById('confirmRecallModal');
+                                if (recallModal) {
+                                    recallModal.classList.add('active');
+
+                                    const btnYes = document.getElementById('btnConfirmRecallYes');
+                                    const btnNo = document.getElementById('btnConfirmRecallNo');
+
+                                    // Remove old listeners
+                                    const newBtnYes = btnYes.cloneNode(true);
+                                    btnYes.parentNode.replaceChild(newBtnYes, btnYes);
+                                    const newBtnNo = btnNo.cloneNode(true);
+                                    btnNo.parentNode.replaceChild(newBtnNo, btnNo);
+
+                                    newBtnNo.addEventListener('click', function() {
+                                        recallModal.classList.remove('active');
+                                    });
+
+                                    newBtnYes.addEventListener('click', function() {
+                                        recallModal.classList.remove('active');
+                                        fetch(`/recall_email/${data.id}`, { method: 'POST' })
+                                            .then(res => res.json())
+                                            .then(resData => {
+                                                if (resData.success) {
+                                                    showToast(resData.message);
+                                                    setTimeout(() => {
+                                                        location.reload();
+                                                    }, 1500);
+                                                } else {
+                                                    showToast(resData.message);
+                                                }
+                                            })
+                                            .catch(err => {
+                                                console.error('Lỗi khi thu hồi thư:', err);
+                                                showToast('Có lỗi xảy ra khi thu hồi thư.');
+                                            });
+                                    });
                                 }
                             };
                         } else {
@@ -684,7 +708,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     if (data.success) {
                         location.reload();
                     } else {
-                        alert(data.message || 'Lỗi khi thay đổi trạng thái gắn sao.');
+                        showToast(data.message || 'Lỗi khi thay đổi trạng thái gắn sao.');
                     }
                 })
                 .catch(err => console.error('Error toggling star:', err));
@@ -730,17 +754,40 @@ document.addEventListener("DOMContentLoaded", function() {
                             btn.addEventListener('click', function(e) {
                                 e.preventDefault();
                                 const id = this.getAttribute('data-id');
-                                if (confirm('Bạn có chắc chắn muốn xóa liên hệ này?')) {
-                                    fetch(`/contacts/delete/${id}`, { method: 'POST' })
-                                        .then(res => res.json())
-                                        .then(resData => {
-                                            if (resData.success) {
-                                                loadContactsList();
-                                            } else {
-                                                alert(resData.message);
-                                            }
-                                        })
-                                        .catch(err => console.error('Lỗi khi xóa liên hệ:', err));
+                                const deleteContactModal = document.getElementById('confirmDeleteContactModal');
+                                if (deleteContactModal) {
+                                    deleteContactModal.classList.add('active');
+
+                                    const btnYes = document.getElementById('btnConfirmDeleteContactYes');
+                                    const btnNo = document.getElementById('btnConfirmDeleteContactNo');
+
+                                    // Remove old listeners
+                                    const newBtnYes = btnYes.cloneNode(true);
+                                    btnYes.parentNode.replaceChild(newBtnYes, btnYes);
+                                    const newBtnNo = btnNo.cloneNode(true);
+                                    btnNo.parentNode.replaceChild(newBtnNo, btnNo);
+
+                                    newBtnNo.addEventListener('click', function() {
+                                        deleteContactModal.classList.remove('active');
+                                    });
+
+                                    newBtnYes.addEventListener('click', function() {
+                                        deleteContactModal.classList.remove('active');
+                                        fetch(`/contacts/delete/${id}`, { method: 'POST' })
+                                            .then(res => res.json())
+                                            .then(resData => {
+                                                if (resData.success) {
+                                                    showToast('Đã xóa liên hệ thành công.');
+                                                    loadContactsList();
+                                                } else {
+                                                    showToast(resData.message);
+                                                }
+                                            })
+                                            .catch(err => {
+                                                console.error('Lỗi khi xóa liên hệ:', err);
+                                                showToast('Có lỗi xảy ra khi xóa liên hệ.');
+                                            });
+                                    });
                                 }
                             });
                         });
@@ -901,63 +948,101 @@ document.getElementById('delete-icon-3').addEventListener('click', function() {
         return;
     }
 
-    if (!confirm('Bạn có chắc chắn muốn xóa vĩnh viễn các email đã chọn không? Thư đã xóa vĩnh viễn không thể khôi phục.')) {
-        return;
+    const deleteModal = document.getElementById('confirmDeleteModal');
+    if (deleteModal) {
+        deleteModal.classList.add('active');
+
+        const btnYes = document.getElementById('btnConfirmDeleteYes');
+        const btnNo = document.getElementById('btnConfirmDeleteNo');
+
+        // Remove any old event listeners
+        const newBtnYes = btnYes.cloneNode(true);
+        btnYes.parentNode.replaceChild(newBtnYes, btnYes);
+        const newBtnNo = btnNo.cloneNode(true);
+        btnNo.parentNode.replaceChild(newBtnNo, btnNo);
+
+        newBtnNo.addEventListener('click', function() {
+            deleteModal.classList.remove('active');
+        });
+
+        newBtnYes.addEventListener('click', function() {
+            deleteModal.classList.remove('active');
+            let emailIds = [];
+            selectedEmails.forEach(checkbox => {
+                let emailRow = checkbox.closest('tr');
+                if (emailRow) {
+                    emailIds.push(emailRow.dataset.emailId);
+                    emailRow.style.display = 'none';
+                }
+            });
+
+            // Gửi yêu cầu xóa tới máy chủ
+            fetch('/delete_emails', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ emailIds: emailIds })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Emails deleted:', data);
+                showToast('Đã xóa vĩnh viễn các email đã chọn.');
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            })
+            .catch(error => {
+                console.error('Error deleting emails:', error);
+                showToast('Có lỗi xảy ra khi xóa thư.');
+            });
+        });
     }
-
-    let emailIds = [];
-
-    selectedEmails.forEach(checkbox => {
-        let emailRow = checkbox.closest('tr');
-        if (emailRow) {
-            emailIds.push(emailRow.dataset.emailId);
-            emailRow.style.display = 'none';
-        }
-    });
-
-    // Gửi yêu cầu xóa tới máy chủ
-    fetch('/delete_emails', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ emailIds: emailIds })
-    })
-    .then(response => response.json())
-    .then(data => {
-        console.log('Emails deleted:', data);
-        showToast('Đã xóa vĩnh viễn các email đã chọn.');
-        setTimeout(() => {
-            location.reload();
-        }, 1500);
-    })
-    .catch(error => {
-        console.error('Error deleting emails:', error);
-        showToast('Có lỗi xảy ra khi xóa thư.');
-    });
 });
 
-document.getElementById('delete-now').addEventListener('click', function() {
-    if (confirm('Bạn có chắc chắn muốn xóa tất cả thư trong thùng rác không?')) {
-        // Gửi yêu cầu xóa tất cả thư trong thùng rác
-        fetch('/delete_all_trash', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('Tất cả thư trong thùng rác đã được xóa thành công!');
-                location.reload(); 
-            } else {
-                alert('Có lỗi xảy ra khi xóa tất cả thư. Vui lòng thử lại.');
-            }
-        })
-        .catch(error => {
-            console.error('Error deleting all emails:', error);
-            alert('Có lỗi xảy ra khi xóa tất cả thư. Vui lòng thử lại.');
+document.getElementById('delete-now').addEventListener('click', function(e) {
+    e.preventDefault();
+    const emptyModal = document.getElementById('confirmEmptyTrashModal');
+    if (emptyModal) {
+        emptyModal.classList.add('active');
+
+        const btnYes = document.getElementById('btnConfirmEmptyYes');
+        const btnNo = document.getElementById('btnConfirmEmptyNo');
+
+        // Remove any old event listeners
+        const newBtnYes = btnYes.cloneNode(true);
+        btnYes.parentNode.replaceChild(newBtnYes, btnYes);
+        const newBtnNo = btnNo.cloneNode(true);
+        btnNo.parentNode.replaceChild(newBtnNo, btnNo);
+
+        newBtnNo.addEventListener('click', function() {
+            emptyModal.classList.remove('active');
+        });
+
+        newBtnYes.addEventListener('click', function() {
+            emptyModal.classList.remove('active');
+            // Gửi yêu cầu xóa tất cả thư trong thùng rác
+            fetch('/delete_all_trash', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('Tất cả thư trong thùng rác đã được xóa thành công!');
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    showToast('Có lỗi xảy ra khi xóa tất cả thư. Vui lòng thử lại.');
+                }
+            })
+            .catch(error => {
+                console.error('Error deleting all emails:', error);
+                showToast('Có lỗi xảy ra khi xóa tất cả thư. Vui lòng thử lại.');
+            });
         });
     }
 });

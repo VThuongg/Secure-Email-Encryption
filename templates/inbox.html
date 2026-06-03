@@ -176,6 +176,62 @@
                 </div>
             </div>
 
+            <!-- Modal xác nhận xóa vĩnh viễn các email đã chọn -->
+            <div id="confirmDeleteModal" class="modal">
+                <div class="modal-content">
+                    <h2 style="color: #ef4444; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 16px;">
+                        <i class='bx bx-error-circle' style='font-size: 28px;'></i>Xác nhận xóa vĩnh viễn
+                    </h2>
+                    <p>Bạn có chắc chắn muốn xóa vĩnh viễn các email đã chọn không? Thư đã xóa vĩnh viễn không thể khôi phục.</p>
+                    <div style="display: flex; justify-content: center; gap: 12px; margin-top: 20px;">
+                        <button id="btnConfirmDeleteYes" style="background: linear-gradient(135deg, #ef4444, #dc2626); box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);">Xóa vĩnh viễn</button>
+                        <button id="btnConfirmDeleteNo" style="background: #e2e8f0; color: #475569; box-shadow: none; border: 1px solid #cbd5e1; outline: none; border-radius: 20px; font-weight: 600; font-size: 14px; padding: 10px 24px; cursor: pointer;">Hủy</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal xác nhận xóa toàn bộ thùng rác -->
+            <div id="confirmEmptyTrashModal" class="modal">
+                <div class="modal-content">
+                    <h2 style="color: #ef4444; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 16px;">
+                        <i class='bx bx-error-circle' style='font-size: 28px;'></i>Dọn sạch thùng rác
+                    </h2>
+                    <p>Bạn có chắc chắn muốn xóa tất cả thư trong thùng rác không? Hành động này không thể khôi phục.</p>
+                    <div style="display: flex; justify-content: center; gap: 12px; margin-top: 20px;">
+                        <button id="btnConfirmEmptyYes" style="background: linear-gradient(135deg, #ef4444, #dc2626); box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);">Xóa tất cả</button>
+                        <button id="btnConfirmEmptyNo" style="background: #e2e8f0; color: #475569; box-shadow: none; border: 1px solid #cbd5e1; outline: none; border-radius: 20px; font-weight: 600; font-size: 14px; padding: 10px 24px; cursor: pointer;">Hủy</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal xác nhận thu hồi email -->
+            <div id="confirmRecallModal" class="modal">
+                <div class="modal-content">
+                    <h2 style="color: #ea580c; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 16px;">
+                        <i class='bx bx-undo' style='font-size: 28px;'></i>Xác nhận thu hồi thư
+                    </h2>
+                    <p>Bạn có chắc chắn muốn thu hồi email này không?</p>
+                    <div style="display: flex; justify-content: center; gap: 12px; margin-top: 20px;">
+                        <button id="btnConfirmRecallYes" style="background: linear-gradient(135deg, #ea580c, #c2410c); box-shadow: 0 4px 12px rgba(234, 88, 12, 0.2);">Thu hồi</button>
+                        <button id="btnConfirmRecallNo" style="background: #e2e8f0; color: #475569; box-shadow: none; border: 1px solid #cbd5e1; outline: none; border-radius: 20px; font-weight: 600; font-size: 14px; padding: 10px 24px; cursor: pointer;">Hủy</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal xác nhận xóa liên hệ -->
+            <div id="confirmDeleteContactModal" class="modal">
+                <div class="modal-content">
+                    <h2 style="color: #ef4444; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 16px;">
+                        <i class='bx bx-error-circle' style='font-size: 28px;'></i>Xóa liên hệ
+                    </h2>
+                    <p>Bạn có chắc chắn muốn xóa liên hệ này khỏi danh bạ không?</p>
+                    <div style="display: flex; justify-content: center; gap: 12px; margin-top: 20px;">
+                        <button id="btnConfirmDeleteContactYes" style="background: linear-gradient(135deg, #ef4444, #dc2626); box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);">Xóa</button>
+                        <button id="btnConfirmDeleteContactNo" style="background: #e2e8f0; color: #475569; box-shadow: none; border: 1px solid #cbd5e1; outline: none; border-radius: 20px; font-weight: 600; font-size: 14px; padding: 10px 24px; cursor: pointer;">Hủy</button>
+                    </div>
+                </div>
+            </div>
+
             <!-- Thư đến -->
             <div class="form-mail-received">
                 <div class="head-received">
