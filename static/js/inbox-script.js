@@ -946,6 +946,71 @@ document.getElementById('delete-now').addEventListener('click', function() {
     }
 });
 
+// ---- Custom Toast Notification ---- //
+function showToast(message, isUndo = false, onUndoCallback = null) {
+    // Remove any existing toast
+    const existingToast = document.querySelector('.custom-toast');
+    if (existingToast) {
+        existingToast.remove();
+    }
+
+    // Create toast container
+    const toast = document.createElement('div');
+    toast.className = 'custom-toast';
+    
+    // Add text message
+    const textSpan = document.createElement('span');
+    textSpan.innerText = message;
+    toast.appendChild(textSpan);
+
+    let undoTimer = null;
+    let autoDismissTimer = null;
+
+    // Add Undo button if needed
+    if (isUndo && onUndoCallback) {
+        const undoBtn = document.createElement('button');
+        undoBtn.className = 'btn-undo';
+        undoBtn.innerHTML = "<i class='bx bx-undo'></i> Hoàn tác";
+        undoBtn.addEventListener('click', function() {
+            clearTimeout(undoTimer);
+            clearTimeout(autoDismissTimer);
+            toast.classList.remove('active');
+            setTimeout(() => toast.remove(), 400);
+            onUndoCallback();
+        });
+        toast.appendChild(undoBtn);
+    }
+
+    // Add close button
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'btn-close-toast';
+    closeBtn.innerHTML = "<i class='bx bx-x'></i>";
+    closeBtn.addEventListener('click', function() {
+        clearTimeout(undoTimer);
+        clearTimeout(autoDismissTimer);
+        toast.classList.remove('active');
+        setTimeout(() => toast.remove(), 400);
+        location.reload(); // Reload immediately if closed manually
+    });
+    toast.appendChild(closeBtn);
+
+    document.body.appendChild(toast);
+
+    // Trigger animation
+    setTimeout(() => {
+        toast.classList.add('active');
+    }, 50);
+
+    // Auto-dismiss after 6 seconds
+    autoDismissTimer = setTimeout(() => {
+        toast.classList.remove('active');
+        setTimeout(() => {
+            toast.remove();
+            location.reload(); // Reload on auto-dismiss to refresh database lists
+        }, 400);
+    }, 6000);
+}
+
 // ---- Chuyển đến thùng rác ---- //
 function moveToTrash(folderType) {
     let emailIds = [];
@@ -961,9 +1026,26 @@ function moveToTrash(folderType) {
     }
 
     if (emailIds.length === 0) {
-        alert('Vui lòng chọn ít nhất một email.');
+        showToast('Vui lòng chọn ít nhất một email.');
         return;
     }
+
+    // Hide rows immediately in DOM
+    emailIds.forEach(id => {
+        const rowsToHide = [
+            document.getElementById(`email-${id}`),
+            document.getElementById(`email1-${id}`),
+            document.getElementById(`email-star-received-${id}`),
+            document.getElementById(`email-star-sent-${id}`),
+            document.querySelector(`tr[data-email-id="${id}"]`)
+        ];
+        rowsToHide.forEach(row => {
+            if (row) {
+                row.style.display = 'none';
+            }
+        });
+    });
+    updateTrashEmails();
 
     fetch('/move_to_trash', {
         method: 'POST',
@@ -975,30 +1057,42 @@ function moveToTrash(folderType) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            emailIds.forEach(id => {
-                const rowsToHide = [
-                    document.getElementById(`email-${id}`),
-                    document.getElementById(`email1-${id}`),
-                    document.getElementById(`email-star-received-${id}`),
-                    document.getElementById(`email-star-sent-${id}`),
-                    document.querySelector(`tr[data-email-id="${id}"]`)
-                ];
-                rowsToHide.forEach(row => {
-                    if (row) {
-                        row.style.display = 'none';
+            showToast('Đã di chuyển email vào thùng rác.', true, function() {
+                // Undo callback: restore from trash
+                fetch('/restore_from_trash', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email_ids: emailIds })
+                })
+                .then(res => res.json())
+                .then(undoData => {
+                    if (undoData.success) {
+                        showToast('Đã hoàn tác, đang khôi phục email...', false);
+                        setTimeout(() => {
+                            location.reload();
+                        }, 1500);
+                    } else {
+                        showToast(undoData.message);
+                        setTimeout(() => location.reload(), 2000);
                     }
+                })
+                .catch(err => {
+                    console.error('Lỗi khi hoàn tác:', err);
+                    showToast('Có lỗi xảy ra khi khôi phục email.');
+                    setTimeout(() => location.reload(), 2000);
                 });
             });
-            updateTrashEmails();
-            alert(data.message);
         } else {
-            alert(data.message);
+            showToast(data.message);
+            setTimeout(() => location.reload(), 2000);
         }
-        location.reload();
     })
     .catch(error => {
         console.error('Lỗi:', error);
-        alert('Đã xảy ra lỗi khi di chuyển email vào thùng rác.');
+        showToast('Đã xảy ra lỗi khi di chuyển email vào thùng rác.');
+        setTimeout(() => location.reload(), 2000);
     });
 }
 

@@ -429,6 +429,36 @@ def move_to_trash():
         db.session.rollback()
         return jsonify({"success": False, "message": f"Lỗi: {str(e)}"})
 
+@app.route('/restore_from_trash', methods=['POST'])
+def restore_from_trash():
+    if 'user_id' not in session:
+        return jsonify({"success": False, "message": "Không được xác thực!!!"})
+
+    data = request.get_json()
+    email_ids = data.get('email_ids', [])
+    user_id = session['user_id']
+
+    if not email_ids:
+        return jsonify({"success": False, "message": "Chưa chọn ít nhất một email!"})
+
+    try:
+        for email_id in email_ids:
+            email = EncryptedEmail.query.get(email_id)
+            if not email:
+                continue
+
+            if email.receiver_id == user_id:
+                email.receiver_deleted = False
+            if email.sender_id == user_id:
+                email.sender_deleted = False
+
+            db.session.commit()
+
+        return jsonify({"success": True, "message": "Đã khôi phục email thành công."})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": False, "message": f"Lỗi: {str(e)}"})
+
 @app.route('/get_trash_emails', methods=['GET'])
 def get_trash_emails():
     if 'user_id' not in session:
