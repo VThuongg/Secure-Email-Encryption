@@ -1,3 +1,7 @@
+import os
+if os.name != 'nt':
+    import eventlet
+    eventlet.monkey_patch()
 
 import json
 import smtplib
@@ -139,12 +143,7 @@ def send_reset_email(user_email, token):
         print(f"Lỗi khi gửi email: {e}")
 
 
-# Danh sách các tên miền email được phép
-ALLOWED_DOMAINS = ['@ATBM.com', '@ATBM.org']
 
-CORS(app)  # Cho phép tất cả các nguồn kết nối đến server Flask
-
-socketio = SocketIO(app, cors_allowed_origins="*")  # Cho phép tất cả các origin kết nối đến
 
 with app.app_context():
     db.create_all()
