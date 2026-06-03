@@ -6,6 +6,7 @@ from email.mime.text import MIMEText
 
 import pytz
 import base64
+import hashlib
 
 
 from os.path import basename
@@ -72,6 +73,19 @@ app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{DATABASE_PATH}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=100)
 app.secret_key = os.urandom(24)
+
+def get_fernet():
+    # Use SHA256 of app.secret_key to get a 32-byte key, then base64 encode it
+    key = base64.urlsafe_b64encode(hashlib.sha256(app.secret_key).digest())
+    return Fernet(key)
+
+def encrypt_session_value(value: str) -> str:
+    f = get_fernet()
+    return f.encrypt(value.encode('utf-8')).decode('utf-8')
+
+def decrypt_session_value(encrypted_value: str) -> str:
+    f = get_fernet()
+    return f.decrypt(encrypted_value.encode('utf-8')).decode('utf-8')
 
 # Cấu hình SMTP email (Gmail)
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
@@ -302,8 +316,7 @@ def login():
             session['user_id'] = user.id
             session['email'] = user.email
             session['username'] = user.username
-            session['private_key'] = decrypt_with_password(password, user.private_key)
-            session['public_key'] = user.public_key
+            session['password'] = encrypt_session_value(password)
             return jsonify(success=True, redirect_url=url_for('inbox'))
 
         return jsonify(success=False, message="Email hoặc mật khẩu không đúng.")
@@ -624,10 +637,14 @@ def send_email():
                 aes_key_en = EncryptForward.query.filter_by(id=table_connect_aes.id_aes).first()
                 aes_key_en_id = aes_key_en.id
 
+                user_obj = db.session.get(User, session['user_id'])
+                decrypted_pw = decrypt_session_value(session['password'])
+                private_key = decrypt_with_password(decrypted_pw, user_obj.private_key)
+                
                 if sender.id == previous_email.sender_id and aes_key_en:
-                    aes_key_by = rsa_decrypt(aes_key_en.key_sender, session['private_key'])
+                    aes_key_by = rsa_decrypt(aes_key_en.key_sender, private_key)
                 elif sender.id == previous_email.receiver_id and aes_key_en:
-                    aes_key_by = rsa_decrypt(aes_key_en.key_receiver, session['private_key'])
+                    aes_key_by = rsa_decrypt(aes_key_en.key_receiver, private_key)
                 else:
                     aes_key_by = None
 
@@ -644,7 +661,8 @@ def send_email():
         if not aes_key:
             aes_key = generate_aes_key()
             encrypted_aes_key_receiver = rsa_encrypt(aes_key.hex(), receiver.public_key)
-            encrypted_aes_key_sender = rsa_encrypt(aes_key.hex(), session['public_key'])
+            user_obj = db.session.get(User, session['user_id'])
+            encrypted_aes_key_sender = rsa_encrypt(aes_key.hex(), user_obj.public_key)
             forward_mail = EncryptForward(
                 key_sender=encrypted_aes_key_sender,
                 key_receiver=encrypted_aes_key_receiver,
@@ -675,7 +693,10 @@ def send_email():
 
         # Tạo chữ ký để xác thực email
         try:
-            signature = create_signature(body, session['private_key'])
+            user_obj = db.session.get(User, session['user_id'])
+            decrypted_pw = decrypt_session_value(session['password'])
+            private_key = decrypt_with_password(decrypted_pw, user_obj.private_key)
+            signature = create_signature(body, private_key)
         except Exception as e:
             msg = f"Lỗi khi tạo chữ ký: {str(e)}"
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.is_json:
@@ -797,7 +818,9 @@ def decrypt_email(email_id):
     if is_sent_email:
         # Người gửi có thể giải mã nội dung đã gửi
         try:
-            private_key = session.get('private_key')
+            user_obj = db.session.get(User, session['user_id'])
+            decrypted_pw = decrypt_session_value(session['password'])
+            private_key = decrypt_with_password(decrypted_pw, user_obj.private_key)
             if not private_key:
                 raise ValueError("Không tìm thấy khóa riêng tư trong phiên.")
 
@@ -852,7 +875,9 @@ def decrypt_email(email_id):
     sender = db.session.get(User, email.sender_id)
 
     try:
-        private_key = session.get('private_key')
+        user_obj = db.session.get(User, session['user_id'])
+        decrypted_pw = decrypt_session_value(session['password'])
+        private_key = decrypt_with_password(decrypted_pw, user_obj.private_key)
         if not private_key:
             raise ValueError("Không tìm thấy khóa riêng tư trong phiên.")
 
@@ -967,6 +992,10 @@ def change_password():
                 user.private_key = new_encrypted_private_key
                 db.session.commit()
 
+                # Cập nhật mật khẩu trong session
+                if 'user_id' in session and session['user_id'] == user.id:
+                    session['password'] = encrypt_session_value(new_password)
+
                 return jsonify(success=True, message="Mật khẩu đã được đổi thành công.")
             except Exception as e:
                 # Handle decryption or encryption errors
@@ -1000,8 +1029,7 @@ def handle_integrity_error(error):
 
 @app.route('/logout')
 def logout():
-    session.pop('user_id', None)
-    session.pop('email', None)
+    session.clear()
     return redirect(url_for('index'))
 
 @app.before_request
