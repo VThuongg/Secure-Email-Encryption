@@ -23,7 +23,7 @@ from sqlalchemy.exc import IntegrityError
 from models import db, User, EncryptedEmail, EncryptForward
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
-from models import db, User, EncryptedEmail, EncryptForward, ConnectAES
+from models import db, User, EncryptedEmail, EncryptForward, ConnectAES, Contact
 from bs4 import BeautifulSoup
 from flask_mail import Mail
 from flask_socketio import SocketIO, emit
@@ -134,6 +134,16 @@ socketio = SocketIO(app, cors_allowed_origins="*")  # Cho phép tất cả các 
 
 with app.app_context():
     db.create_all()
+    try:
+        from sqlalchemy import text, inspect
+        inspector = inspect(db.engine)
+        columns = [col['name'] for col in inspector.get_columns('encrypted_email')]
+        if 'self_destruct_duration' not in columns:
+            with db.engine.begin() as conn:
+                conn.execute(text("ALTER TABLE encrypted_email ADD COLUMN self_destruct_duration INTEGER DEFAULT NULL"))
+            print("Added self_destruct_duration column to encrypted_email table.")
+    except Exception as e:
+        print(f"Error auto-upgrading db structure: {e}")
 
 # Trang chủ
 @app.route('/')
@@ -323,14 +333,15 @@ def inbox():
 
     received_emails = received_emails.order_by(EncryptedEmail.timestamp.desc()).all()
 
-    # Lấy danh sách email đã gửi và sắp xếp theo thời gian giảm dần
     sent_emails = (
         db.session.query(
             EncryptedEmail.id,
             EncryptedEmail.subject,
             EncryptedEmail.timestamp,
             User.email.label('receiver_email'),
-            EncryptedEmail.sender_deleted
+            EncryptedEmail.sender_deleted,
+            EncryptedEmail.sender_starred,
+            EncryptedEmail.is_recalled
         )
         .join(User, User.id == EncryptedEmail.receiver_id)
         .filter(EncryptedEmail.sender_id == session['user_id'], EncryptedEmail.sender_deleted == False)
@@ -346,7 +357,9 @@ def inbox():
             'id': email.id,
             'receiver_email': email.receiver_email,
             'subject': email.subject,
-            'local_time': local_time.strftime('%Y-%m-%d %H:%M:%S')
+            'local_time': local_time.strftime('%Y-%m-%d %H:%M:%S'),
+            'sender_starred': email.sender_starred,
+            'is_recalled': email.is_recalled
         })
 
     for email in received_emails:
@@ -356,13 +369,22 @@ def inbox():
 
         email.sender_email = sender.email if sender else "Người gửi không xác định"
 
-        # Giải mã nội dung email
-        decrypted_body = None
         if email.timestamp:
             utc_time = email.timestamp
             email.local_time = utc_time.replace(tzinfo=pytz.utc).astimezone(local_tz)
         else:
             email.local_time = None
+
+        if email.is_recalled:
+            email.decrypted_body = "Thư đã bị thu hồi."
+            continue
+
+        if email.expiry_time and datetime.utcnow() > email.expiry_time:
+            email.decrypted_body = "Thư đã tự hủy."
+            continue
+
+        # Giải mã nội dung email
+        decrypted_body = None
 
         try:
             private_key = session.get('private_key')
@@ -545,15 +567,30 @@ def send_email():
         subject = request.form['subject']
         body = request.form['body']
 
+        self_destruct = request.form.get('self_destruct', 'none')
+        self_destruct_duration = None
+        if self_destruct == '5m':
+            self_destruct_duration = 300
+        elif self_destruct == '1h':
+            self_destruct_duration = 3600
+        elif self_destruct == '24h':
+            self_destruct_duration = 86400
+
         # Không cho phép gửi email cho chính mình
         if recipient_email == session['email']:
-            flash("Bạn không thể gửi email cho chính mình.")
+            msg = "Bạn không thể gửi email cho chính mình."
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.is_json:
+                return jsonify(success=False, message=msg)
+            flash(msg)
             return redirect(url_for('inbox'))
 
         # Tìm người nhận
         receiver = User.query.filter_by(email=recipient_email).first()
         if not receiver:
-            flash("Người nhận không tồn tại.")
+            msg = "Người nhận không tồn tại."
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.is_json:
+                return jsonify(success=False, message=msg)
+            flash(msg)
             return redirect(url_for('inbox'))
 
         # Kiểm tra email trước đó và lấy khóa AES nếu có
@@ -583,7 +620,10 @@ def send_email():
                 if aes_key_by:
                     aes_key = bytes.fromhex(aes_key_by)
             except Exception as e:
-                flash(f"Lỗi khi lấy khóa AES từ email trước đó: {str(e)}")
+                msg = f"Lỗi khi lấy khóa AES từ email trước đó: {str(e)}"
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.is_json:
+                    return jsonify(success=False, message=msg)
+                flash(msg)
                 return redirect(url_for('inbox'))
 
         # Nếu không tìm thấy khóa AES, tạo mới
@@ -623,7 +663,10 @@ def send_email():
         try:
             signature = create_signature(body, session['private_key'])
         except Exception as e:
-            flash(f"Lỗi khi tạo chữ ký: {str(e)}")
+            msg = f"Lỗi khi tạo chữ ký: {str(e)}"
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.is_json:
+                return jsonify(success=False, message=msg)
+            flash(msg)
             return redirect(url_for('inbox'))
 
         # Lưu email vào cơ sở dữ liệu
@@ -632,7 +675,9 @@ def send_email():
             receiver_id=receiver.id,
             subject=subject,
             body=encrypted_body.hex(),
-            attachments=json.dumps(encrypted_attachments)
+            attachments=json.dumps(encrypted_attachments),
+            expiry_time=None,
+            self_destruct_duration=self_destruct_duration
         )
         db.session.add(email)
         db.session.commit()
@@ -652,9 +697,16 @@ def send_email():
         db.session.commit()
 
         # Phát sự kiện cho các client khác
-        socketio.emit('new_email', {'message': 'Email đã được gửi.'})
+        socketio.emit('new_email', {
+            'message': 'Email đã được gửi.',
+            'sender_id': session['user_id'],
+            'receiver_id': receiver.id
+        })
 
-        flash("Email đã được gửi.")
+        msg = "Email đã được gửi."
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.is_json:
+            return jsonify(success=True, message=msg)
+        flash(msg)
         return redirect(url_for('inbox'))
 
     return render_template('inbox.html')
@@ -666,8 +718,55 @@ def decrypt_email(email_id):
         return redirect(url_for('login'))
     email = EncryptedEmail.query.get_or_404(email_id)
 
-    if not email.is_read:
+    # Lấy thông tin người gửi và người nhận
+    sender = db.session.get(User, email.sender_id)
+    receiver = db.session.get(User, email.receiver_id)
+
+    # Thiết lập múi giờ cho thành phố Hồ Chí Minh và định dạng thời gian
+    local_tz = pytz.timezone('Asia/Ho_Chi_Minh')
+    if email.timestamp:
+        local_time = email.timestamp.replace(tzinfo=pytz.utc).astimezone(local_tz)
+        timestamp_formatted = local_time.strftime("%Y-%m-%d %H:%M:%S")
+    else:
+        timestamp_formatted = "Không xác định"
+
+    # Kiểm tra nếu thư bị thu hồi
+    if email.is_recalled:
+        return jsonify({
+            'message': "Thư đã bị thu hồi bởi người gửi.",
+            'subject': email.subject,
+            'send_email': sender.email if sender else "",
+            'sender_email': sender.email if sender else "",
+            'receiver_email': receiver.email if receiver else "",
+            'timestamp': timestamp_formatted,
+            'decrypted_body_send': "Thư đã bị thu hồi bởi người gửi.",
+            'decrypted_body': "Thư đã bị thu hồi bởi người gửi.",
+            'decrypted_attachments': [],
+            'is_recalled': True
+        })
+
+    # Kiểm tra nếu thư đã hết hạn tự hủy
+    if email.expiry_time and datetime.utcnow() > email.expiry_time:
+        email.body = "Thư đã tự hủy."
+        email.attachments = "[]"
+        db.session.commit()
+        return jsonify({
+            'message': "Thư này đã tự hủy.",
+            'subject': email.subject,
+            'send_email': sender.email if sender else "",
+            'sender_email': sender.email if sender else "",
+            'receiver_email': receiver.email if receiver else "",
+            'timestamp': timestamp_formatted,
+            'decrypted_body_send': "Thư này đã tự hủy và không thể đọc được nữa.",
+            'decrypted_body': "Thư này đã tự hủy và không thể đọc được nữa.",
+            'decrypted_attachments': [],
+            'is_expired': True
+        })
+
+    if not email.is_read and email.receiver_id == session['user_id']:
         email.is_read = True
+        if email.self_destruct_duration:
+            email.expiry_time = datetime.utcnow() + timedelta(seconds=email.self_destruct_duration)
         db.session.commit()
 
     decrypted_body = None
@@ -680,15 +779,6 @@ def decrypt_email(email_id):
 
     keyconnect_aes = ConnectAES.query.filter_by(id_body=email_id).first()
     keyAES_email = EncryptForward.query.filter_by(id=keyconnect_aes.id_aes).first()
-
-    # Thiết lập múi giờ cho thành phố Hồ Chí Minh
-    local_tz = pytz.timezone('Asia/Ho_Chi_Minh')
-
-    if email.timestamp:
-        local_time = email.timestamp.replace(tzinfo=pytz.utc).astimezone(local_tz)
-        timestamp_formatted = local_time.strftime("%Y-%m-%d %H:%M:%S")
-    else:
-        timestamp_formatted = "Không xác định"
 
     if is_sent_email:
         # Người gửi có thể giải mã nội dung đã gửi
@@ -730,13 +820,14 @@ def decrypt_email(email_id):
         except Exception as e:
             decryption_error = f"Giải mã thất bại: {str(e)}"
 
-        receiver_email = db.session.get(User, email.receiver_id)
-
         return jsonify({
+            'id': email.id,
+            'is_read': email.is_read,
+            'is_recalled': email.is_recalled,
             'message': "Đây là email bạn đã gửi.",
             'subject': email.subject,
             'send_email': session['email'],  # Địa chỉ email của người gửi
-            'receiver_email': receiver_email.email,
+            'receiver_email': receiver.email if receiver else "",
             'timestamp': timestamp_formatted,  # Thời gian gửi
             'decrypted_body_send': decrypted_body,
             'decryption_error': decryption_error,
@@ -928,6 +1019,111 @@ def download_private_key():
     if os.path.exists(file_path):
         return send_file(file_path, as_attachment=True, download_name=base_name)
     return "Không tìm thấy file khóa riêng tư.", 404
+
+
+@app.route('/toggle_star/<int:email_id>', methods=['POST'])
+def toggle_star(email_id):
+    if 'user_id' not in session:
+        return jsonify({"success": False, "message": "Không được xác thực!!!"})
+    user_id = session['user_id']
+    email = EncryptedEmail.query.get_or_404(email_id)
+    
+    if email.receiver_id == user_id:
+        email.receiver_starred = not email.receiver_starred
+        db.session.commit()
+        return jsonify({"success": True, "starred": email.receiver_starred})
+    elif email.sender_id == user_id:
+        email.sender_starred = not email.sender_starred
+        db.session.commit()
+        return jsonify({"success": True, "starred": email.sender_starred})
+    else:
+        return jsonify({"success": False, "message": "Không có quyền gắn sao thư này."})
+
+@app.route('/contacts', methods=['GET', 'POST'])
+def contacts():
+    if 'user_id' not in session:
+        return jsonify({"success": False, "message": "Không được xác thực!!!"})
+    
+    user_id = session['user_id']
+    if request.method == 'POST':
+        if request.is_json:
+            data = request.get_json()
+            name = data.get('name')
+            email = data.get('email')
+        else:
+            name = request.form.get('name')
+            email = request.form.get('email')
+        
+        if not name or not email:
+            return jsonify({"success": False, "message": "Thiếu thông tin tên hoặc email."})
+            
+        if '@' not in email:
+            email = f"{email}@ATBM.com"
+        
+        # Kiểm tra xem email này có tồn tại trong hệ thống User không để lấy khóa công khai
+        contact_user = User.query.filter_by(email=email).first()
+        public_key = contact_user.public_key if contact_user else None
+        
+        # Kiểm tra xem danh bạ này đã tồn tại chưa
+        existing = Contact.query.filter_by(user_id=user_id, email=email).first()
+        if existing:
+            existing.name = name
+            existing.public_key = public_key
+            db.session.commit()
+            return jsonify({"success": True, "message": "Đã cập nhật danh bạ thành công."})
+        
+        contact = Contact(user_id=user_id, name=name, email=email, public_key=public_key)
+        db.session.add(contact)
+        db.session.commit()
+        return jsonify({"success": True, "message": "Đã thêm danh bạ thành công."})
+    
+    all_contacts = Contact.query.filter_by(user_id=user_id).all()
+    contacts_data = [{
+        "id": c.id,
+        "name": c.name,
+        "email": c.email,
+        "public_key_status": "Có" if c.public_key else "Không"
+    } for c in all_contacts]
+    
+    return jsonify({"success": True, "contacts": contacts_data})
+
+@app.route('/contacts/delete/<int:contact_id>', methods=['POST'])
+def delete_contact(contact_id):
+    if 'user_id' not in session:
+        return jsonify({"success": False, "message": "Không được xác thực!!!"})
+    
+    user_id = session['user_id']
+    contact = Contact.query.filter_by(id=contact_id, user_id=user_id).first()
+    if not contact:
+        return jsonify({"success": False, "message": "Không tìm thấy danh bạ hoặc không có quyền xóa."})
+    
+    db.session.delete(contact)
+    db.session.commit()
+    return jsonify({"success": True, "message": "Đã xóa danh bạ thành công."})
+
+@app.route('/recall_email/<int:email_id>', methods=['POST'])
+def recall_email(email_id):
+    if 'user_id' not in session:
+        return jsonify({"success": False, "message": "Không được xác thực!!!"})
+    
+    user_id = session['user_id']
+    email = EncryptedEmail.query.get_or_404(email_id)
+    
+    if email.sender_id != user_id:
+        return jsonify({"success": False, "message": "Bạn không có quyền thu hồi thư này."})
+    
+    if email.is_read:
+        return jsonify({"success": False, "message": "Người nhận đã đọc thư, không thể thu hồi!"})
+    
+    if email.is_recalled:
+        return jsonify({"success": False, "message": "Thư này đã được thu hồi trước đó."})
+    
+    email.is_recalled = True
+    email.body = "Thư đã bị thu hồi bởi người gửi."
+    email.attachments = "[]"
+    db.session.commit()
+    
+    return jsonify({"success": True, "message": "Thu hồi thư thành công."})
 
 
 if __name__ == '__main__':

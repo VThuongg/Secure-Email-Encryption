@@ -16,6 +16,7 @@
 
 </head>
 <body>
+    <div id="user-info" data-user-id="{{ session['user_id'] }}" data-email="{{ session['email'] }}" style="display: none;"></div>
     <div class="container">
         <!-- Sidebar -->
         <div class="sidebar">
@@ -40,6 +41,13 @@
                     <span class="tooltip">Hộp thư đến</span>
                 </li>
                 <li>
+                    <a class="mail-starred">
+                        <i class='bx bxs-star'></i>
+                        <span class="links-name">Thư gắn sao</span>
+                    </a>
+                    <span class="tooltip">Thư gắn sao</span>
+                </li>
+                <li>
                     <a class="mail-send">
                         <i class='bx bx-send'></i>
                         <span class="links-name">Thư đã gửi</span>
@@ -52,6 +60,13 @@
                         <span class="links-name">Thùng rác</span>
                     </a>
                     <span class="tooltip">Thùng rác</span>
+                </li>
+                <li>
+                    <a class="contacts-list">
+                        <i class='bx bxs-contact'></i>
+                        <span class="links-name">Danh bạ</span>
+                    </a>
+                    <span class="tooltip">Danh bạ</span>
                 </li>
                 <li class="log-out">
                     <a href="{{ url_for('logout') }}">
@@ -139,6 +154,28 @@
                 </div>
             </div>
 
+            <!-- Modal thành công khi gửi thư -->
+            <div id="sendEmailSuccessModal" class="modal">
+                <div class="modal-content">
+                    <h2 style="color: #10b981; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 16px;">
+                        <i class='bx bx-check-circle' style='font-size: 28px;'></i>Thành công!
+                    </h2>
+                    <p id="successSendEmailMessage"></p>
+                    <button onclick="closeSendEmailSuccessModal()" style="background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);">OK</button>
+                </div>
+            </div>
+
+            <!-- Modal lỗi khi gửi thư -->
+            <div id="sendEmailErrorModal" class="modal">
+                <div class="modal-content">
+                    <h2 style="color: #ef4444; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 16px;">
+                        <i class='bx bx-error-circle' style='font-size: 28px;'></i>Lỗi!
+                    </h2>
+                    <p id="errorSendEmailMessage"></p>
+                    <button onclick="closeSendEmailErrorModal()" style="background: linear-gradient(135deg, #ef4444, #dc2626); box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);">Đóng</button>
+                </div>
+            </div>
+
             <!-- Thư đến -->
             <div class="form-mail-received">
                 <div class="head-received">
@@ -152,6 +189,7 @@
                     <thead>
                         <tr>
                             <th class="col-checkbox"><input type="checkbox" id="select-all-received"></th>
+                            <th style="width: 40px;"></th>
                             <th>Người gửi</th>
                             <th>Chủ đề</th>
                             <th>Thời gian</th>
@@ -162,6 +200,9 @@
                         {% for email in received_emails %}
                         <tr class="email-row {% if email.is_read %}read{% else %}unread{% endif %}" id="email1-{{ email.id }}">
                             <td><input type="checkbox" class="email-checkbox-received" data-email-id="{{ email.id }}"></td>
+                            <td class="col-star">
+                                <i class='bx {% if email.receiver_starred %}bxs-star starred{% else %}bx-star{% endif %} btn-star' data-email-id="{{ email.id }}"></i>
+                            </td>
                             <td>{{ email.sender_email }}</td>
                             <td>{{ email.subject }}</td>
                             <td>{{ email.local_time.strftime('%Y-%m-%d %H:%M:%S') }}</td>
@@ -196,6 +237,7 @@
                     <thead>
                         <tr>
                             <th class="col-checkbox"><input type="checkbox" id="select-all-send"></th>
+                            <th style="width: 40px;"></th>
                             <th>Người nhận</th>
                             <th>Chủ đề</th>
                             <th>Thời gian</th>
@@ -206,6 +248,9 @@
                         {% if not email.is_deleted %}
                         <tr class="email-row" id="email-{{ email.id }}">
                             <td><input type="checkbox" class="email-checkbox-send" data-email-id="{{ email.id }}"></td>
+                            <td class="col-star">
+                                <i class='bx {% if email.sender_starred %}bxs-star starred{% else %}bx-star{% endif %} btn-star' data-email-id="{{ email.id }}"></i>
+                            </td>
                             <td>{{ email.receiver_email }}</td>
                             <td>{{ email.subject }}</td>
                             <td>{{ email.local_time }}
@@ -252,6 +297,115 @@
                 <div class="pagination-controls"></div>
             </div>
 
+            <!-- Thư gắn sao -->
+            <div class="form-mail-starred">
+                <div class="head-starred" style="display:flex; justify-content:space-between; align-items:center; padding-bottom:20px; border-bottom:1px solid #e2e8f0; margin-bottom:20px;">
+                    <span class="mail-starred" style="font-size:24px; font-weight:800; color:#0f172a; letter-spacing:-0.5px;">Thư gắn sao</span>
+                    <div class="head-icon">
+                        <i class='bx bx-dots-vertical-rounded'></i>
+                    </div>
+                </div>
+                <table class="email-table">
+                    <thead>
+                        <tr>
+                            <th class="col-checkbox"><input type="checkbox" id="select-all-starred"></th>
+                            <th style="width: 40px;"></th>
+                            <th>Người gửi/Người nhận</th>
+                            <th>Chủ đề</th>
+                            <th>Thời gian</th>
+                            <th>Nội dung</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- received starred -->
+                        {% for email in received_emails %}
+                        {% if email.receiver_starred %}
+                        <tr class="email-row {% if email.is_read %}read{% else %}unread{% endif %}" id="email-star-received-{{ email.id }}">
+                            <td><input type="checkbox" class="email-checkbox-starred" data-email-id="{{ email.id }}"></td>
+                            <td class="col-star">
+                                <i class='bx bxs-star starred btn-star' data-email-id="{{ email.id }}"></i>
+                            </td>
+                            <td>{{ email.sender_email }} <span class="tag tag-received" style="background:#dbeafe; color:#1e40af; font-size:11px; padding:2px 6px; border-radius:4px; margin-left:6px;">Đến</span></td>
+                            <td>{{ email.subject }}</td>
+                            <td>{{ email.local_time.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                            <td>
+                                {% if '----Forwarded message----' in email.decrypted_body %}
+                                    {{ email.decrypted_body.split('----Forwarded message----')[0] | truncate(50) | e }}
+                                {% elif "Vào lúc:" in email.decrypted_body %}
+                                    {{ email.decrypted_body.split('Vào lúc')[0] | truncate(50) | e }}
+                                {% else %}
+                                    {{ email.decrypted_body | truncate(50) | e }}
+                                {% endif %}
+                                <a href="{{ url_for('decrypt_email', email_id=email.id) }}" class="btn-show-decode" style="display: none;"></a>
+                            </td>
+                        </tr>
+                        {% endif %}
+                        {% endfor %}
+                        
+                        <!-- sent starred -->
+                        {% for email in sent_emails %}
+                        {% if email.sender_starred %}
+                        <tr class="email-row" id="email-star-sent-{{ email.id }}">
+                            <td><input type="checkbox" class="email-checkbox-starred" data-email-id="{{ email.id }}"></td>
+                            <td class="col-star">
+                                <i class='bx bxs-star starred btn-star' data-email-id="{{ email.id }}"></i>
+                            </td>
+                            <td>{{ email.receiver_email }} <span class="tag tag-sent" style="background:#fef3c7; color:#92400e; font-size:11px; padding:2px 6px; border-radius:4px; margin-left:6px;">Đi</span></td>
+                            <td>{{ email.subject }}</td>
+                            <td>{{ email.local_time }}
+                                <a href="{{ url_for('decrypt_email', email_id=email.id) }}" class="btn-show-details" style="display: none;"></a>
+                            </td>
+                            <td>(Thư đã gửi)</td>
+                        </tr>
+                        {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <div class="pagination-controls"></div>
+            </div>
+
+            <!-- Danh bạ -->
+            <div class="form-mail-received form-contacts-list" style="z-index: 93;">
+                <div class="head-received">
+                    <span class="mail-received">Danh bạ cá nhân</span>
+                    <div class="head-icon">
+                        <button type="button" class="btn-back" id="btnOpenAddContact" style="font-size:13px; padding:8px 16px;"><i class='bx bx-plus'></i> Thêm liên hệ</button>
+                    </div>
+                </div>
+                <table class="email-table">
+                    <thead>
+                        <tr>
+                            <th>Tên gợi nhớ</th>
+                            <th>Địa chỉ Email</th>
+                            <th>Khóa công khai</th>
+                            <th>Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody id="contacts-table-body">
+                        <!-- Filled dynamically -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Modal Thêm danh bạ -->
+            <div id="addContactModal" class="modal">
+                <div class="modal-content">
+                    <button class="close-btn" onclick="document.getElementById('addContactModal').classList.remove('active')"><i class='bx bx-x'></i></button>
+                    <h2 style="margin-bottom: 20px;">Thêm liên hệ mới</h2>
+                    <form id="add-contact-form" style="text-align: left;">
+                        <div style="margin-bottom: 12px;">
+                            <label style="font-size:13px; color:#475569; font-weight:600; display:block; margin-bottom:6px;">Tên gợi nhớ:</label>
+                            <input type="text" id="contact_name" required style="width:100%; border:1px solid #cbd5e1; border-radius:8px; padding:10px; font-size:14px;" />
+                        </div>
+                        <div style="margin-bottom: 20px;">
+                            <label style="font-size:13px; color:#475569; font-weight:600; display:block; margin-bottom:6px;">Địa chỉ Email:</label>
+                            <input type="text" id="contact_email" placeholder="ví dụ: abc@ATBM.com" required style="width:100%; border:1px solid #cbd5e1; border-radius:8px; padding:10px; font-size:14px;" />
+                        </div>
+                        <button type="submit" style="width:100%; padding:12px; border-radius:24px; border:none; background: linear-gradient(135deg, #2563eb, #7c3aed); color:white; font-weight:600; cursor:pointer;">Lưu liên hệ</button>
+                    </form>
+                </div>
+            </div>
+
             <!-- Flash messages -->
             {% with messages = get_flashed_messages() %}
                 {% if messages %}
@@ -266,16 +420,31 @@
                 <form action="{{ url_for('send_email') }}" class="form-create-mail" method="POST" enctype="multipart/form-data" onsubmit="updateBody()">
                     <div class="head-create-mail">
                         <p class="title-head-create-mail">Thư mới</p>
-                        <div class="create-mail-icon">
-                            <i class='bx bx-x' id="close-compose"></i>
+                        <div class="create-mail-icon" style="display: flex; align-items: center; gap: 10px;">
+                            <i class='bx bx-minus' id="minimize-compose" style="cursor: pointer;"></i>
+                            <i class='bx bx-x' id="close-compose" style="cursor: pointer;"></i>
                         </div>
                     </div>
 
-                    <input type="email" name="recipient" id="recipient" class="form-control" placeholder="Người nhận" required />
+                    <div style="position: relative; width: calc(100% - 32px); margin-left: 16px;">
+                        <input type="text" name="recipient" id="recipient" class="form-control" placeholder="Người nhận" required style="width: 100%; margin-left: 0;" autocomplete="off" />
+                        <div id="recipient-autocomplete" class="autocomplete-dropdown"></div>
+                    </div>
                     <input type="text" name="subject" id="subject" class="form-control" placeholder="Tiêu đề" required />
+                    
+                    <div class="self-destruct-container" style="width: calc(100% - 32px); margin-left: 16px; margin-top: 12px; display: flex; align-items: center; gap: 10px;">
+                        <label for="self_destruct" style="font-size: 13px; color: #475569; font-weight: 600;"><i class='bx bx-time-five'></i> Tự hủy thư:</label>
+                        <select name="self_destruct" id="self_destruct" style="padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; color: #0f172a; background: #ffffff;">
+                            <option value="none">Không tự hủy</option>
+                            <option value="5m">Sau 5 phút</option>
+                            <option value="1h">Sau 1 giờ</option>
+                            <option value="24h">Sau 24 giờ</option>
+                        </select>
+                    </div>
+
                     <div id="main" class="form-control-main" contenteditable="true">
-                    <div class="file-list-container" id="file-list-container"></div>
-                        </div>
+                        <div class="file-list-container" id="file-list-container"></div>
+                    </div>
                     <input type="hidden" name="body" id="hidden-body" required />
 
                     <div class="footer-create-mail">
@@ -296,42 +465,72 @@
             <div id="formDecode" class="form-decode">
                 <div class="detail-header">
                     <button type="button" class="btn-back" id="btnBackDecode"><i class='bx bx-arrow-back'></i> Quay lại</button>
-                    <h1>Nội dung Email</h1>
+                    <div class="detail-header-badge"><i class='bx bxs-shield-alt-2'></i> Thư bảo mật</div>
                 </div>
-                <p>Người gửi: <span id="senderEmail"></span></p>
-                <p>Tiêu đề: <span id="subjectEmail"></span></p>
-                <p>Thời gian: <span id="timeEmailReceived"></span></p>
-                <div id="bodyContent">
-                    <p>Nội dung:</p>
+
+                <div class="email-subject-container">
+                    <h2 class="email-subject" id="subjectEmail"></h2>
+                    <span class="badge badge-inbox">Hộp thư đến</span>
+                </div>
+
+                <div class="email-sender-card">
+                    <div class="sender-avatar" id="senderAvatar">
+                        <span id="senderAvatarChar">U</span>
+                    </div>
+                    <div class="sender-details">
+                        <div class="sender-meta">
+                            <span class="sender-name" id="senderEmailName">Người gửi</span>
+                            <span class="sender-email">&lt;<span id="senderEmail"></span>&gt;</span>
+                        </div>
+                        <div class="recipient-meta">
+                            tới <span class="recipient-name">tôi</span>
+                        </div>
+                    </div>
+                    <div class="email-time-meta">
+                        <span class="email-date" id="timeEmailReceived"></span>
+                    </div>
+                </div>
+
+                <div class="security-banner decrypted">
+                    <div class="security-banner-icon">
+                        <i class='bx bxs-lock-open-alt'></i>
+                    </div>
+                    <div class="security-banner-text">
+                        <strong>Mã hóa đầu cuối (End-to-End Encrypted)</strong>
+                        <p>Thư này đã được mã hóa an toàn bằng khóa công khai của bạn và được giải mã trực tiếp trên trình duyệt của bạn.</p>
+                    </div>
+                </div>
+
+                <div id="bodyContent" class="email-body-wrapper">
                     <div class="content">
                         <span id="decryptedBody"></span>
                     </div>
                 </div>
-                <div id="noDecryptedBody">
-                    <p>Không có nội dung giải mã.</p>
+                <div id="noDecryptedBody" class="email-body-wrapper no-content">
+                    <p><i class='bx bx-error-alt'></i> Không thể giải mã nội dung thư này hoặc nội dung trống.</p>
                 </div>
-                <div id="attachmentsContent">
-                    <p>Tệp đính kèm:</p>
-                    <div id="attachmentsList"></div>
+
+                <div id="attachmentsContent" class="email-attachments-wrapper">
+                    <h4 class="attachments-title"><i class='bx bx-paperclip'></i> Tệp đính kèm</h4>
+                    <div id="attachmentsList" class="attachments-grid"></div>
                 </div>
-                <div id="noAttachmentsContent">
-                    <p>Không có tệp đính kèm.</p>
-                </div>
+                <div id="noAttachmentsContent" class="email-attachments-wrapper" style="display: none;"></div>
+
                 <div class="position-end-decode">
                     <div class="end-decode">
                         <div class="rep-mail">
-                            <a class="btn-rep-email-received">
-                                <i class="bx bx-share"></i>
+                            <a class="btn-rep-email-received pill-btn highlight">
+                                <i class="bx bx-reply"></i>
                                 <span>Trả lời</span>
                             </a>
-                            <a class="btn-forward-email-received">
+                            <a class="btn-forward-email-received pill-btn">
                                 <i class="bx bx-share"></i>
                                 <span>Chuyển tiếp</span>
                             </a>
                         </div>
                         <div class="footer-icon">
                             <a>
-                                <button type="button" id="closeFormDecode"><i class='bx bx-arrow-back'></i></button>
+                                <button type="button" id="closeFormDecode" class="circle-btn"><i class='bx bx-arrow-back'></i></button>
                             </a>
                         </div>
                     </div>
@@ -369,45 +568,77 @@
             <div id="formSeen" class="form-seen">
                 <div class="detail-header">
                     <button type="button" class="btn-back" id="btnBackSeen"><i class='bx bx-arrow-back'></i> Quay lại</button>
-                    <h1>Nội dung Email đã gửi</h1>
+                    <div class="detail-header-badge sent"><i class='bx bxs-send'></i> Thư đã gửi</div>
                 </div>
-                <p>Thông tin: <span id="messEmail"></span></p>
-                <p>Người gửi: <span id="sendEmail"></span></p>
-                <p>Người nhận: <span id="receiverEmail"></span></p>
-                <p>Thời gian: <span id="timeEmailSent"></span></p>
-                <p>Tiêu đề: <span id="subjectSeen"></span></p>
-                <div id="bodySeenContent">
-                    <p>Nội dung:</p>
+
+                <div class="email-subject-container">
+                    <h2 class="email-subject" id="subjectSeen"></h2>
+                    <span class="badge badge-sent">Thư đã gửi</span>
+                </div>
+
+                <div class="email-sender-card">
+                    <div class="sender-avatar" id="senderSeenAvatar">
+                        <span id="senderSeenAvatarChar">T</span>
+                    </div>
+                    <div class="sender-details">
+                        <div class="sender-meta">
+                            <span class="sender-name">Tôi</span>
+                            <span class="sender-email">&lt;<span id="sendEmail"></span>&gt;</span>
+                        </div>
+                        <div class="recipient-meta">
+                            tới <span class="recipient-name" id="receiverEmailName">Người nhận</span>
+                            <span class="sender-email">&lt;<span id="receiverEmail"></span>&gt;</span>
+                        </div>
+                    </div>
+                    <div class="email-time-meta">
+                        <span class="email-date" id="timeEmailSent"></span>
+                    </div>
+                </div>
+
+                <div class="security-banner encrypted">
+                    <div class="security-banner-icon">
+                        <i class='bx bxs-lock-alt'></i>
+                    </div>
+                    <div class="security-banner-text">
+                        <strong>Đã mã hóa an toàn (Encrypted on Send)</strong>
+                        <p id="messEmail">Thư này đã được mã hóa bằng khóa công khai của người nhận trước khi gửi đi để đảm bảo tính bảo mật.</p>
+                    </div>
+                </div>
+
+                <div id="bodySeenContent" class="email-body-wrapper">
                     <div class="content">
                         <span id="decryptedBodySeen"></span>
                     </div>
                 </div>
-                <div id="noDecryptedBodySeen">
-                    <p>Không có nội dung giải mã.</p>
+                <div id="noDecryptedBodySeen" class="email-body-wrapper no-content">
+                    <p><i class='bx bx-error-alt'></i> Không có nội dung giải mã hoặc thư đã bị thu hồi.</p>
                 </div>
-                <div id="attachmentsSeenContent">
-                    <p>Tệp đính kèm:</p>
-                    <div id="attachmentsSeenList"></div>
+
+                <div id="attachmentsSeenContent" class="email-attachments-wrapper">
+                    <h4 class="attachments-title"><i class='bx bx-paperclip'></i> Tệp đính kèm</h4>
+                    <div id="attachmentsSeenList" class="attachments-grid"></div>
                 </div>
-                <div id="noAttachmentsSeenContent">
-                    <p>Không có tệp đính kèm.</p>
-                </div>
+                <div id="noAttachmentsSeenContent" class="email-attachments-wrapper" style="display: none;"></div>
 
                 <div class="position-end-seen">
                     <div class="end-seen">
                         <div class="rep-mail">
-                            <a class="btn-rep-email-sent">
-                                <i class="bx bx-share"></i>
+                            <a class="btn-rep-email-sent pill-btn highlight">
+                                <i class="bx bx-reply"></i>
                                 <span>Trả lời</span>
                             </a>
-                            <a class="btn-forward-email-sent">
+                            <a class="btn-forward-email-sent pill-btn">
                                 <i class="bx bx-share"></i>
                                 <span>Chuyển tiếp</span>
+                            </a>
+                            <a class="btn-recall-email-sent pill-btn recall-btn" id="btnRecallEmail" style="display: none;">
+                                <i class="bx bx-undo"></i>
+                                <span>Thu hồi</span>
                             </a>
                         </div>
                         <div class="footer-icon">
                             <a>
-                                <button type="button" id="close-form-seen"><i class='bx bx-arrow-back'></i></button>
+                                <button type="button" id="close-form-seen" class="circle-btn"><i class='bx bx-arrow-back'></i></button>
                             </a>
                         </div>
                     </div>

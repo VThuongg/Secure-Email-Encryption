@@ -24,7 +24,7 @@ function resetPassword() {
 
 // Hiển thị modal thành công
 function showSuccessModal() {
-    document.getElementById('successModal').style.display = 'block';
+    document.getElementById('successModal').style.display = 'flex';
 }
 
 // Chuyển hướng đến trang đăng nhập
@@ -36,7 +36,7 @@ function redirectToLogin() {
 
 // Hiển thị modal thành công
 function showForgotPasswordSuccessModal() {
-    document.getElementById('forgotPasswordSuccessModal').style.display = 'block';
+    document.getElementById('forgotPasswordSuccessModal').style.display = 'flex';
 }
 
 // Đóng modal thành công
@@ -46,7 +46,7 @@ function closeForgotPasswordSuccessModal() {
 
 // Hiển thị modal lỗi
 function showForgotPasswordErrorModal() {
-    document.getElementById('forgotPasswordErrorModal').style.display = 'block';
+    document.getElementById('forgotPasswordErrorModal').style.display = 'flex';
 }
 
 // Đóng modal lỗi
@@ -63,7 +63,7 @@ function redirectedToReset() {
 
 // Hiển thị modal thành công
 function showResetPasswordSuccessModal() {
-    document.getElementById('resetPasswordSuccessModal').style.display = 'block';
+    document.getElementById('resetPasswordSuccessModal').style.display = 'flex';
 }
 
 // Đóng modal thành công
@@ -75,7 +75,7 @@ function closeResetPasswordSuccessModal() {
 
 // Hiển thị modal lỗi
 function showResetPasswordErrorModal() {
-    document.getElementById('resetPasswordErrorModal').style.display = 'block';
+    document.getElementById('resetPasswordErrorModal').style.display = 'flex';
 }
 
 // Đóng modal lỗi
@@ -86,7 +86,7 @@ function closeResetPasswordErrorModal() {
 // Hiển thị modal lỗi
 function showErrorModal(message) {
     document.getElementById('errorMessage').textContent = message;
-    document.getElementById('errorModal').style.display = 'block';
+    document.getElementById('errorModal').style.display = 'flex';
 }
 
 // Đóng modal lỗi
@@ -135,7 +135,7 @@ document.querySelector('.register').addEventListener('submit', function(event) {
 // Hiển thị modal lỗi khi đăng nhập
 function showErrorModalLogin(message) {
     document.getElementById('errorMessageLogin').textContent = message;
-    document.getElementById('errorModalLogin').style.display = 'block';
+    document.getElementById('errorModalLogin').style.display = 'flex';
 }
 
 // Đóng modal lỗi đăng nhập

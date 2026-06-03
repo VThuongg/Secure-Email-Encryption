@@ -613,22 +613,330 @@ th:last-child, td:last-child {
 .detail-header {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 16px;
-    margin-bottom: 24px;
+    margin-bottom: 20px;
     border-bottom: 1px solid #e2e8f0;
-    padding-bottom: 16px;
+    padding: 24px 0 16px 0;
     position: sticky;
     top: 0;
     z-index: 10;
     background: #ffffff;
-    padding-top: 40px;
 }
 
-.detail-header h1 {
-    font-size: 24px;
-    font-weight: 800;
+.detail-header .btn-back {
+    margin: 0;
+}
+
+.detail-header-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.detail-header-badge.sent {
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.detail-header-badge i {
+    font-size: 14px;
+}
+
+/* Chủ đề thư giống Gmail */
+.email-subject-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.email-subject {
+    font-size: 22px;
+    font-weight: 700;
     color: #0f172a;
     margin: 0;
+    line-height: 1.3;
+}
+
+.badge {
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: 4px;
+    text-transform: uppercase;
+}
+
+.badge-inbox {
+    background: #e0f2fe;
+    color: #0369a1;
+}
+
+.badge-sent {
+    background: #fef3c7;
+    color: #b45309;
+}
+
+/* Thẻ người gửi (Gmail style) */
+.email-sender-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.sender-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 16px;
+    color: #ffffff;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+}
+
+/* Các màu avatar ngẫu nhiên đẹp */
+.sender-avatar.avatar-a, .sender-avatar.avatar-e, .sender-avatar.avatar-i, .sender-avatar.avatar-m, .sender-avatar.avatar-q, .sender-avatar.avatar-u, .sender-avatar.avatar-y {
+    background: linear-gradient(135deg, #ef4444, #f97316);
+}
+.sender-avatar.avatar-b, .sender-avatar.avatar-f, .sender-avatar.avatar-j, .sender-avatar.avatar-n, .sender-avatar.avatar-r, .sender-avatar.avatar-v, .sender-avatar.avatar-z {
+    background: linear-gradient(135deg, #3b82f6, #06b6d4);
+}
+.sender-avatar.avatar-c, .sender-avatar.avatar-g, .sender-avatar.avatar-k, .sender-avatar.avatar-o, .sender-avatar.avatar-s, .sender-avatar.avatar-w {
+    background: linear-gradient(135deg, #10b981, #84cc16);
+}
+.sender-avatar.avatar-d, .sender-avatar.avatar-h, .sender-avatar.avatar-l, .sender-avatar.avatar-p, .sender-avatar.avatar-t, .sender-avatar.avatar-x {
+    background: linear-gradient(135deg, #8b5cf6, #ec4899);
+}
+
+.sender-details {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.sender-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.sender-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.sender-email {
+    font-size: 12px;
+    color: #64748b;
+    font-weight: 400;
+}
+
+.recipient-meta {
+    font-size: 12px;
+    color: #64748b;
+}
+
+.recipient-name {
+    font-weight: 500;
+    color: #334155;
+}
+
+.email-time-meta {
+    font-size: 13px;
+    color: #64748b;
+    font-weight: 500;
+}
+
+/* Banner bảo mật unique twist */
+.security-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 18px;
+    border-radius: 12px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+}
+
+.security-banner.decrypted {
+    background: rgba(16, 185, 129, 0.04);
+    border: 1px solid rgba(16, 185, 129, 0.15);
+}
+
+.security-banner.encrypted {
+    background: rgba(59, 130, 246, 0.04);
+    border: 1px solid rgba(59, 130, 246, 0.15);
+}
+
+.security-banner-icon {
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 2px;
+}
+
+.security-banner.decrypted .security-banner-icon {
+    color: #10b981;
+}
+
+.security-banner.encrypted .security-banner-icon {
+    color: #3b82f6;
+}
+
+.security-banner-text strong {
+    display: block;
+    font-size: 13px;
+    color: #0f172a;
+    font-weight: 700;
+    margin-bottom: 2px;
+}
+
+.security-banner-text p {
+    font-size: 12px;
+    color: #475569 !important;
+    margin: 0 !important;
+}
+
+/* Khung nội dung thư */
+.email-body-wrapper {
+    margin-bottom: 24px;
+}
+
+.email-body-wrapper .content {
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    padding: 24px;
+    min-height: 160px;
+    color: #334155;
+    font-size: 15px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    box-shadow: inset 0 2px 4px rgba(15, 23, 42, 0.01);
+}
+
+.email-body-wrapper.no-content p {
+    font-size: 14px;
+    color: #94a3b8;
+    background: #f8fafc;
+    border: 1px dashed #cbd5e1;
+    border-radius: 12px;
+    padding: 30px;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 0;
+}
+
+/* Khối tệp đính kèm */
+.email-attachments-wrapper {
+    margin-bottom: 30px;
+}
+
+.attachments-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #475569;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.attachments-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+/* Nút dạng viên thuốc (Pill buttons) */
+.pill-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 24px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #475569;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 30px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.pill-btn:hover {
+    color: #2563eb;
+    border-color: #3b82f6;
+    background: #eff6ff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(59, 130, 246, 0.08);
+}
+
+.pill-btn.highlight {
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+    color: #ffffff;
+    border: none;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+}
+
+.pill-btn.highlight:hover {
+    background: linear-gradient(135deg, #1d4ed8, #6d28d9);
+    color: #ffffff;
+    box-shadow: 0 6px 16px rgba(37, 99, 235, 0.25);
+}
+
+.pill-btn.recall-btn {
+    background: rgba(239, 68, 68, 0.05);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.15);
+}
+
+.pill-btn.recall-btn:hover {
+    background: #ef4444;
+    color: #ffffff;
+    border-color: #ef4444;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+}
+
+.circle-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.circle-btn:hover {
+    color: #ef4444;
+    border-color: #fca5a5;
+    background: #fef2f2;
+    transform: rotate(90deg);
 }
 
 .btn-back {
@@ -1080,13 +1388,13 @@ th:last-child, td:last-child {
 
 .form-decode h1,
 .form-seen h1 {
-    font-size: 24px;
+    font-size: 22px;
     font-weight: 800;
     color: #0f172a;
-    border-bottom: 1px solid #f1f5f9;
-    padding-bottom: 16px;
-    margin-bottom: 24px;
     letter-spacing: -0.5px;
+    margin: 0;
+    padding: 0;
+    border: none;
 }
 
 .form-decode p,
@@ -1369,4 +1677,110 @@ th:last-child, td:last-child {
     .search input {
         width: 100%;
     }
+}
+
+/* === UI Upgrades: Starred, Contacts, Autocomplete & Attachment Preview === */
+.col-star {
+    text-align: center;
+    width: 40px;
+    font-size: 20px;
+    color: #94a3b8;
+    cursor: pointer;
+    transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.col-star:hover {
+    transform: scale(1.15);
+    color: #f59e0b;
+}
+
+.btn-star.starred {
+    color: #f59e0b !important;
+}
+
+.form-mail-starred {
+    position: absolute;
+    background: #ffffff;
+    margin: 20px;
+    width: calc(100% - 40px);
+    height: calc(90vh - 40px);
+    top: 10vh;
+    z-index: 92;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px) scale(0.98);
+    border-radius: 16px;
+    border: 1px solid #cbd5e1;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.03);
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    overflow-y: auto;
+    padding: 40px;
+}
+
+.form-mail-starred.active {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+}
+
+.autocomplete-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+    z-index: 200;
+    max-height: 200px;
+    overflow-y: auto;
+    display: none;
+}
+
+.autocomplete-dropdown .autocomplete-item {
+    padding: 10px 16px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #334155;
+    transition: background 0.2s ease;
+}
+
+.autocomplete-dropdown .autocomplete-item:hover {
+    background: #f1f5f9;
+}
+
+.form-file img.img-preview {
+    width: 100%;
+    height: 70px;
+    object-fit: cover;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    z-index: 1;
+}
+
+#btnOpenAddContact {
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+    color: #ffffff;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(37, 99, 235, 0.15);
+    transition: all 0.2s ease;
+}
+
+#btnOpenAddContact:hover {
+    background: linear-gradient(135deg, #1d4ed8, #6d28d9) !important;
+    box-shadow: 0 6px 14px rgba(37, 99, 235, 0.25);
+    transform: translateY(-1px);
+}
+
+/* Custom styling for minimized compose form */
+.form-create-mail.minimized {
+    height: 52px !important;
+}
+
+.form-create-mail.minimized .head-create-mail {
+    cursor: pointer;
 }

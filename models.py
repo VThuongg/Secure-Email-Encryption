@@ -27,6 +27,18 @@ class EncryptedEmail(db.Model):
     sender_deleted = db.Column(db.Boolean, default=False)
     trash_date = db.Column(db.DateTime)
     is_read = db.Column(db.Boolean, default=False)
+    receiver_starred = db.Column(db.Boolean, default=False)
+    sender_starred = db.Column(db.Boolean, default=False)
+    expiry_time = db.Column(db.DateTime, nullable=True)
+    is_recalled = db.Column(db.Boolean, default=False)
+    self_destruct_duration = db.Column(db.Integer, nullable=True)
+
+class Contact(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    name = db.Column(db.String(120), nullable=False)
+    email = db.Column(db.String(120), nullable=False)
+    public_key = db.Column(db.Text, nullable=True)
 
 class EncryptForward(db.Model):
     id = db.Column(db.Integer, primary_key=True)
