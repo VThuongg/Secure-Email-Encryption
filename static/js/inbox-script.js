@@ -975,14 +975,22 @@ function moveToTrash(folderType) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert(data.message);
             emailIds.forEach(id => {
-                const emailRow = document.getElementById(`email-${id}`);
-                if (emailRow) {
-                    emailRow.style.display = 'none';
-                }
+                const rowsToHide = [
+                    document.getElementById(`email-${id}`),
+                    document.getElementById(`email1-${id}`),
+                    document.getElementById(`email-star-received-${id}`),
+                    document.getElementById(`email-star-sent-${id}`),
+                    document.querySelector(`tr[data-email-id="${id}"]`)
+                ];
+                rowsToHide.forEach(row => {
+                    if (row) {
+                        row.style.display = 'none';
+                    }
+                });
             });
             updateTrashEmails();
+            alert(data.message);
         } else {
             alert(data.message);
         }
