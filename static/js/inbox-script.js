@@ -896,6 +896,15 @@ toggleDeleteIconTrash();
 
 document.getElementById('delete-icon-3').addEventListener('click', function() {
     let selectedEmails = document.querySelectorAll('.email-checkbox-trash:checked');
+    if (selectedEmails.length === 0) {
+        showToast('Vui lòng chọn ít nhất một email.');
+        return;
+    }
+
+    if (!confirm('Bạn có chắc chắn muốn xóa vĩnh viễn các email đã chọn không? Thư đã xóa vĩnh viễn không thể khôi phục.')) {
+        return;
+    }
+
     let emailIds = [];
 
     selectedEmails.forEach(checkbox => {
@@ -917,8 +926,15 @@ document.getElementById('delete-icon-3').addEventListener('click', function() {
     .then(response => response.json())
     .then(data => {
         console.log('Emails deleted:', data);
+        showToast('Đã xóa vĩnh viễn các email đã chọn.');
+        setTimeout(() => {
+            location.reload();
+        }, 1500);
     })
-    .catch(error => console.error('Error deleting emails:', error));
+    .catch(error => {
+        console.error('Error deleting emails:', error);
+        showToast('Có lỗi xảy ra khi xóa thư.');
+    });
 });
 
 document.getElementById('delete-now').addEventListener('click', function() {
