@@ -1108,17 +1108,33 @@ th:last-child, td:last-child {
 
 .head-icon #delete-icon-1,
 .head-icon #delete-icon-2,
-.head-icon #delete-icon-3 {
+.head-icon #delete-icon-3,
+.head-icon #restore-icon-3 {
     display: none;
     text-align: center;
+}
+
+.head-icon #delete-icon-1,
+.head-icon #delete-icon-2,
+.head-icon #delete-icon-3 {
     color: #ef4444;
     background: rgba(239, 68, 68, 0.08);
+}
+
+.head-icon #restore-icon-3 {
+    color: #3b82f6;
+    background: rgba(59, 130, 246, 0.08);
 }
 
 .head-icon #delete-icon-1:hover,
 .head-icon #delete-icon-2:hover,
 .head-icon #delete-icon-3:hover {
     background: #ef4444;
+    color: #ffffff;
+}
+
+.head-icon #restore-icon-3:hover {
+    background: #3b82f6;
     color: #ffffff;
 }
 

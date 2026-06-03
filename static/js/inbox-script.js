@@ -923,11 +923,13 @@ document.querySelectorAll('.email-checkbox-send').forEach(checkbox => {
 }); 
 toggleDeleteIconSend();
 
-// ---- Nút Delete của form thùng rác ---- //
+// ---- Nút Delete & Restore của form thùng rác ---- //
 function toggleDeleteIconTrash() {
     let checkboxesChecked = document.querySelectorAll('.email-checkbox-trash:checked').length > 0;
     let deleteIcon = document.getElementById('delete-icon-3');
-    deleteIcon.style.display = checkboxesChecked ? 'block' : 'none';
+    let restoreIcon = document.getElementById('restore-icon-3');
+    if (deleteIcon) deleteIcon.style.display = checkboxesChecked ? 'block' : 'none';
+    if (restoreIcon) restoreIcon.style.display = checkboxesChecked ? 'block' : 'none';
 }
 
 document.getElementById('select-all-trash').addEventListener('change', function(event) {
@@ -940,6 +942,50 @@ document.querySelectorAll('.email-checkbox-trash').forEach(checkbox => {
     checkbox.addEventListener('change', toggleDeleteIconTrash);
 });
 toggleDeleteIconTrash();
+
+// Sự kiện click nút khôi phục (Restore/Hoàn tác) từ Thùng rác
+document.getElementById('restore-icon-3').addEventListener('click', function() {
+    let selectedEmails = document.querySelectorAll('.email-checkbox-trash:checked');
+    if (selectedEmails.length === 0) {
+        showToast('Vui lòng chọn ít nhất một email.');
+        return;
+    }
+
+    let emailIds = [];
+    selectedEmails.forEach(checkbox => {
+        let emailRow = checkbox.closest('tr');
+        if (emailRow) {
+            emailIds.push(emailRow.dataset.emailId);
+            emailRow.style.display = 'none';
+        }
+    });
+
+    // Send request to restore emails from trash to original folders
+    fetch('/restore_from_trash', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email_ids: emailIds })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Đã khôi phục email thành công.');
+            setTimeout(() => {
+                location.reload();
+            }, 1500);
+        } else {
+            showToast(data.message);
+            setTimeout(() => location.reload(), 2000);
+        }
+    })
+    .catch(error => {
+        console.error('Lỗi khi khôi phục email:', error);
+        showToast('Có lỗi xảy ra khi khôi phục email.');
+        setTimeout(() => location.reload(), 2000);
+    });
+});
 
 document.getElementById('delete-icon-3').addEventListener('click', function() {
     let selectedEmails = document.querySelectorAll('.email-checkbox-trash:checked');
