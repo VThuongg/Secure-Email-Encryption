@@ -26,16 +26,16 @@ Dự án môn học **An toàn và Bảo mật thông tin (ATBM)** - Xây dựng
 ## 🎨 Giao Diện Ứng Dụng (User Interface)
 
 ### 1. Trang đăng nhập (Login)
-![Trang Đăng nhập](docs/images/img_signin.png)
+![Trang Đăng nhập](docs/images/signin.png)
 
 ### 2. Trang đăng ký (Register)
-![Trang Đăng ký](docs/images/img_register.png)
+![Trang Đăng ký](docs/images/register.png)
 
 ### 3. Hộp thư chính (Inbox & Dashboard)
-![Hộp thư chính](docs/images/img_firstweb.png)
+![Hộp thư chính](docs/images/main.png)
 
 ### 4. Soạn thảo thư & Ký số (Compose & Digital Signature)
-![Cửa sổ Soạn thư](docs/images/img_newemail.png)
+![Cửa sổ Soạn thư](docs/images/newemail.png)
 
 ---
 
